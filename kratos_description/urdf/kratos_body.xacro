@@ -1,0 +1,38 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <xacro:macro name="kratos_body">
+    <link name="base_link">
+
+      <!-- Visual -->
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="package://kratos_description/meshes/body.stl"
+                scale="0.001 0.001 0.001"/>
+        </geometry>
+      </visual>
+
+      <!-- Collision -->
+      <collision>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="package://kratos_description/meshes/body.stl"
+                scale="0.001 0.001 0.001"/>
+        </geometry>
+      </collision>
+
+      <!-- Inertial (placeholder – you should tune this) -->
+      <inertial>
+        <origin xyz="0 0 0"/>
+        <mass value="20.0"/>
+        <inertia
+          ixx="1.0" ixy="0.0" ixz="0.0"
+          iyy="1.0" iyz="0.0"
+          izz="1.0"/>
+      </inertial>
+
+    </link>
+  </xacro:macro>
+
+</robot>

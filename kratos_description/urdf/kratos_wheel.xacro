@@ -1,0 +1,48 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <xacro:macro name="kratos_wheel" params="name parent xyz rpy">
+
+    <!-- Wheel link -->
+    <link name="${name}">
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="package://kratos_description/meshes/wheel.stl"
+                scale="0.001 0.001 0.001"/>
+        </geometry>
+      </visual>
+
+      <collision>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <!-- Use simple collision if possible -->
+          <cylinder radius="0.08" length="0.05"/>
+        </geometry>
+      </collision>
+
+      <inertial>
+        <origin xyz="0 0 0"/>
+        <mass value="2.0"/>
+        <inertia
+          ixx="0.01" ixy="0" ixz="0"
+          iyy="0.01" iyz="0"
+          izz="0.01"/>
+      </inertial>
+    </link>
+
+    <!-- Wheel joint -->
+    <joint name="${name}_joint" type="continuous">
+      <parent link="${parent}"/>
+      <child link="${name}"/>
+
+      <!-- Position of wheel relative to base -->
+      <origin xyz="${xyz}" rpy="${rpy}"/>
+
+      <!-- ROTATION AXIS -->
+      <axis xyz="0 0 1"/>
+    </joint>
+
+  </xacro:macro>
+
+</robot>

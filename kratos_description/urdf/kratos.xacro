@@ -1,0 +1,23 @@
+<?xml version="1.0"?> 
+<xacro:include filename="$(find kratos_description)/urdf/kratos_body.xacro"/>
+<xacro:include filename="$(find kratos_description)/urdf/kratos_wheel.xacro"/>
+
+<robot name="kratos">
+
+  <!-- BODY -->
+  <xacro:kratos_body/>
+
+  <!-- WHEELS -->
+  <xacro:kratos_wheel
+      name="left_wheel"
+      parent="base_link"
+      xyz="0.3 0.25 0.0"
+      rpy="0 0 0"/>
+
+  <xacro:kratos_wheel
+      name="right_wheel"
+      parent="base_link"
+      xyz="0.3 -0.25 0.0"
+      rpy="0 0 0"/>
+
+</robot>
