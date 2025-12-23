@@ -1,13 +1,12 @@
-<?xml version="1.0"?> 
-<xacro:include filename="$(find kratos_description)/urdf/kratos_body.xacro"/>
-<xacro:include filename="$(find kratos_description)/urdf/kratos_wheel.xacro"/>
+<?xml version="1.0"?>
+<robot name="kratos" xmlns:xacro="http://www.ros.org/wiki/xacro">
 
-<robot name="kratos">
+  <xacro:include filename="$(find kratos_description)/urdf/kratos_body.xacro"/>
+  <xacro:include filename="$(find kratos_description)/urdf/kratos_wheel.xacro"/>
+  <xacro:include filename="$(find zed_wrapper)/urdf/zed_macro.urdf.xacro" />
 
-  <!-- BODY -->
   <xacro:kratos_body/>
 
-  <!-- WHEELS -->
   <xacro:kratos_wheel
       name="left_wheel"
       parent="base_link"
@@ -19,5 +18,52 @@
       parent="base_link"
       xyz="0.3 -0.25 0.0"
       rpy="0 0 0"/>
+  <xacro:zed_camera name="zed" model="zed2i">
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+  </xacro:zed_camera>
 
+<joint name="zed_mount_joint" type="fixed">
+      <parent link="base_link"/>
+      <child link="zed_camera_link"/>
+      
+      <origin xyz="0 0.25 0" rpy="0 0 1.57"/> 
+</joint>
+
+  <gazebo reference="zed_left_camera_frame">
+    <sensor name="zed_camera" type="depth">
+      <visualize>true</visualize>
+      <update_rate>30.0</update_rate>
+      <camera name="zed">
+        <horizontal_fov>1.91986</horizontal_fov>
+        <image>
+          <width>1280</width>
+          <height>720</height>
+          <format>R8G8B8</format>
+        </image>
+        <clip>
+          <near>0.3</near>
+          <far>20.0</far>
+        </clip>
+        <noise>
+          <type>gaussian</type>
+          <mean>0.0</mean>
+          <stddev>0.007</stddev>
+        </noise>
+      </camera>
+      
+      <plugin name="camera_controller" filename="libgazebo_ros_camera.so">
+        <ros>
+          <namespace>zed</namespace>
+          <remapping>zed_camera/image_raw:=zed_node/rgb/image_rect_color</remapping>
+          <remapping>zed_camera/camera_info:=zed_node/rgb/camera_info</remapping>
+          <remapping>zed_camera/depth/image_raw:=zed_node/depth/depth_registered</remapping>
+          <remapping>zed_camera/points:=zed_node/point_cloud/cloud_registered</remapping>
+          <remapping>zed_camera/depth/camera_info:=zed_node/depth/camera_info</remapping>
+        </ros>
+        <frame_name>zed_left_camera_optical_frame</frame_name>
+        <min_depth>0.3</min_depth>
+        <max_depth>20.0</max_depth>
+      </plugin>
+    </sensor>
+  </gazebo>
 </robot>
