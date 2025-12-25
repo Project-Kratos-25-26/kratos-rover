@@ -12,7 +12,7 @@ def generate_launch_description():
     kratos_description_dir = get_package_share_directory('kratos_description')
     kratos_gazebo_dir = get_package_share_directory('kratos_gazebo')
     xacro_file = os.path.join(kratos_gazebo_dir, 'urdf', 'kratos.gazebo.xacro')
-    world_file = os.path.join(kratos_gazebo_dir, 'worlds', 'empty.world')
+    world_file = os.path.join(kratos_gazebo_dir, 'worlds', 'cones.world')
     
     # Set Gazebo model path
     pkg_prefix = get_package_prefix('kratos_description')

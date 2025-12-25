@@ -1,0 +1,28 @@
+<?xml version="1.0" ?>
+<sdf version="1.5">
+  <model name="Construction Cone">
+    <link name="link">
+      <collision name="collision">
+        <geometry>
+          <mesh>
+            <scale>5 5 5</scale>
+            <uri>model://construction_cone_yellow/meshes/construction_cone.dae</uri>
+          </mesh>
+        </geometry>
+      </collision>
+      <visual name="visual">
+        <geometry>
+          <mesh>
+            <scale>5 5 5</scale>
+            <uri>model://construction_cone_yellow/meshes/construction_cone.dae</uri>
+          </mesh>
+        </geometry>
+
+        <material>
+          <ambient>0.95 0.9 0.2 1</ambient>
+          <diffuse>0.95 0.9 0.2 1</diffuse>
+        </material>
+      </visual>
+    </link>
+  </model>
+</sdf>

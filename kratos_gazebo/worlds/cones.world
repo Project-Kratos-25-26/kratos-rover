@@ -1,0 +1,36 @@
+<?xml version="1.0" ?>
+<sdf version="1.6">
+  <world name="default">
+
+    <!-- Ground + sun (if not already present) -->
+    <include>
+      <uri>model://ground_plane</uri>
+    </include>
+
+    <include>
+      <uri>model://sun</uri>
+    </include>
+
+    <!-- 🔴 Cone 1 -->
+    <include>
+      <uri>model://construction_cone_red</uri>
+      <name>cone_1</name>
+      <pose>2 1 0 0 0 0</pose>
+    </include>
+
+    <!-- 🔵 Cone 2 -->
+    <include>
+      <uri>model://construction_cone_blue</uri>
+      <name>cone_2</name>
+      <pose>4 -1.5 0 0 0 0</pose>
+    </include>
+
+    <!-- 🟡 Cone 3 -->
+    <include>
+      <uri>model://construction_cone_yellow</uri>
+      <name>cone_3</name>
+      <pose>-3 0.5 0 0 0 1.57</pose>
+    </include>
+
+  </world>
+</sdf>
