@@ -1,12 +1,13 @@
 <?xml version="1.0"?>
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro">
-
+  <!-- Define PI constant -->
+  <xacro:property name="PI" value="3.14159265359"/>
   <xacro:macro name="kratos_body">
     <link name="base_link">
 
       <!-- Visual -->
       <visual>
-        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <origin xyz="0 0 0" rpy="0 0 ${-PI/2}"/>
         <geometry>
           <mesh filename="package://kratos_description/meshes/body.stl"
                 scale="0.001 0.001 0.001"/>

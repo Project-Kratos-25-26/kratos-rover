@@ -2,21 +2,19 @@ from launch import LaunchDescription
 from launch_ros.actions import Node
 from launch.actions import IncludeLaunchDescription, SetEnvironmentVariable
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-from ament_index_python.packages import get_package_share_directory
+from ament_index_python.packages import get_package_share_directory, get_package_prefix
 from launch.substitutions import Command
+from launch_ros.parameter_descriptions import ParameterValue
 import os
 
 def generate_launch_description():
     # Paths
     kratos_description_dir = get_package_share_directory('kratos_description')
     kratos_gazebo_dir = get_package_share_directory('kratos_gazebo')
-    # Use the Gazebo-specific xacro that includes physics and plugins
     xacro_file = os.path.join(kratos_gazebo_dir, 'urdf', 'kratos.gazebo.xacro')
     world_file = os.path.join(kratos_gazebo_dir, 'worlds', 'empty.world')
     
-    # Set Gazebo model path to include ROS package paths
-    # IMPORTANT: Must point to parent directory (share folder), not the package itself
-    from ament_index_python import get_package_prefix
+    # Set Gazebo model path
     pkg_prefix = get_package_prefix('kratos_description')
     gazebo_model_path = SetEnvironmentVariable(
         name='GAZEBO_MODEL_PATH',
@@ -32,29 +30,31 @@ def generate_launch_description():
         name='GAZEBO_RESOURCE_PATH',
         value=os.pathsep.join([
             os.environ.get('GAZEBO_RESOURCE_PATH', ''),
-            '/usr/share/gazebo-11',
+            '/usr/share/gazebo',
             kratos_description_dir
         ])
     )
     
-    # Launch Gazebo with the custom world
+    # Launch Gazebo
     gazebo_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             os.path.join(get_package_share_directory('gazebo_ros'), 'launch', 'gazebo.launch.py')
         ),
-        launch_arguments={
-            'world': world_file,
-            'verbose': 'true'
-        }.items()
+        launch_arguments={'world': world_file, 'verbose': 'true'}.items()
     )
     
-    # Robot state publisher
+    # Robot State Publisher
     rsp_node = Node(
         package='robot_state_publisher',
         executable='robot_state_publisher',
         name='robot_state_publisher',
         output='screen',
-        parameters=[{'robot_description': Command(['xacro ', xacro_file])}]
+        parameters=[{
+            'robot_description': ParameterValue(
+                Command(['xacro ', xacro_file]),
+                value_type=str
+            )
+        }]
     )
     
     # Spawn robot in Gazebo
