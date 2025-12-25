@@ -20,8 +20,8 @@
   <!-- Gazebo properties for left wheels -->
   <gazebo reference="left_wheel_front">
     <material>Gazebo/Black</material>
-    <mu1>1.0</mu1>  <!-- Higher friction for wheels -->
-    <mu2>1.0</mu2>
+    <mu1>0.0</mu1>  <!-- Higher friction for wheels -->
+    <mu2>0.0</mu2>
     <kp>1000000.0</kp>
     <kd>1.0</kd>
   </gazebo>
@@ -36,8 +36,8 @@
 
   <gazebo reference="left_wheel_rear">
     <material>Gazebo/Black</material>
-    <mu1>1.0</mu1>
-    <mu2>1.0</mu2>
+    <mu1>0.0</mu1>
+    <mu2>0.0</mu2>
     <kp>1000000.0</kp>
     <kd>1.0</kd>
   </gazebo>
@@ -45,8 +45,8 @@
   <!-- Gazebo properties for right wheels -->
   <gazebo reference="right_wheel_front">
     <material>Gazebo/Black</material>
-    <mu1>1.0</mu1>
-    <mu2>1.0</mu2>
+    <mu1>0.0</mu1>
+    <mu2>0.0</mu2>
     <kp>1000000.0</kp>
     <kd>1.0</kd>
   </gazebo>
@@ -61,8 +61,8 @@
 
   <gazebo reference="right_wheel_rear">
     <material>Gazebo/Black</material>
-    <mu1>1.0</mu1>
-    <mu2>1.0</mu2>
+    <mu1>0.0</mu1>
+    <mu2>0.0</mu2>
     <kp>1000000.0</kp>
     <kd>1.0</kd>
   </gazebo>

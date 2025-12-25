@@ -15,38 +15,38 @@
   <xacro:kratos_left_wheel
       name="left_wheel_front"
       parent="base_link"
-      xyz="0.4 0.5 0.0"
+      xyz="0.4 0.5 -0.5"
       rpy="0 0 0"/>
 
   <xacro:kratos_left_wheel
       name="left_wheel_middle"
       parent="base_link"
-      xyz="0.0 0.5 0.0"
+      xyz="0.0 0.5 -0.5"
       rpy="0 0 0"/>
 
   <xacro:kratos_left_wheel
       name="left_wheel_rear"
       parent="base_link"
-      xyz="-0.4 0.5 0.0"
+      xyz="-0.4 0.5 -0.5"
       rpy="0 0 0"/>
 
   <!-- Right side wheels (3 wheels) -->
   <xacro:kratos_right_wheel
       name="right_wheel_front"
       parent="base_link"
-      xyz="0.4 -0.5 0.0"
+      xyz="0.4 -0.5 -0.5"
       rpy="0 0 0"/>
 
   <xacro:kratos_right_wheel
       name="right_wheel_middle"
       parent="base_link"
-      xyz="0.0 -0.5 0.0"
+      xyz="0.0 -0.5 -0.5"
       rpy="0 0 0"/>
 
   <xacro:kratos_right_wheel
       name="right_wheel_rear"
       parent="base_link"
-      xyz="-0.4 -0.5 0.0"
+      xyz="-0.4 -0.5 -0.5"
       rpy="0 0 0"/>
   
   <xacro:zed_camera name="zed" model="zed2i">
