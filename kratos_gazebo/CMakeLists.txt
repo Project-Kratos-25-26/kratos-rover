@@ -26,7 +26,12 @@ install(DIRECTORY
   urdf
   DESTINATION share/${PROJECT_NAME}/
 )
-
+# Install Python scripts as executables
+install(PROGRAMS
+  scripts/fake_mavros.py
+  DESTINATION lib/${PROJECT_NAME}
+  RENAME fake_mavros
+)
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   set(ament_cmake_copyright_FOUND TRUE)

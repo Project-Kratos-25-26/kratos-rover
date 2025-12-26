@@ -70,11 +70,19 @@ def generate_launch_description():
         ],
         output='screen'
     )
-    
+
+    compass_node = Node(
+        package='kratos_gazebo',
+        executable='fake_mavros',
+        name='fake_mavros_compass',
+        output='screen'
+    )
+
     return LaunchDescription([
         gazebo_model_path,
         gazebo_resource_path,
         gazebo_launch,
         rsp_node,
-        spawn_node
+        spawn_node,
+        compass_node
     ])
