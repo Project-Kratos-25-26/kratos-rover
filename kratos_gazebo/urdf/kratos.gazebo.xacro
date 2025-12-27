@@ -151,15 +151,16 @@
       </camera>
       
       <plugin name="camera_controller" filename="libgazebo_ros_camera.so">
-        <ros>
+	<ros>
           <namespace>zed</namespace>
-          <remapping>zed_camera/image_raw:=zed_node/rgb/image_rect_color</remapping>
-          <remapping>zed_camera/camera_info:=zed_node/rgb/camera_info</remapping>
+          <remapping>zed_camera/image_raw:=zed_node/left/image_rect_color</remapping>
+          <remapping>zed_camera/camera_info:=zed_node/left/camera_info</remapping>
+          
           <remapping>zed_camera/depth/image_raw:=zed_node/depth/depth_registered</remapping>
           <remapping>zed_camera/points:=zed_node/point_cloud/cloud_registered</remapping>
           <remapping>zed_camera/depth/camera_info:=zed_node/depth/camera_info</remapping>
-        </ros>
-        <frame_name>zed_left_camera_optical_frame</frame_name>
+        </ros>      
+	<frame_name>zed_left_camera_optical_frame</frame_name>
         <min_depth>0.3</min_depth>
         <max_depth>20.0</max_depth>
         

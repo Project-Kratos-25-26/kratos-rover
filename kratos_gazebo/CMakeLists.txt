@@ -32,6 +32,12 @@ install(PROGRAMS
   DESTINATION lib/${PROJECT_NAME}
   RENAME fake_mavros
 )
+
+install(DIRECTORY
+  models
+  DESTINATION share/${PROJECT_NAME}
+)
+
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   set(ament_cmake_copyright_FOUND TRUE)
