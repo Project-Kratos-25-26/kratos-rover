@@ -128,7 +128,7 @@
   <!-- ========================================= -->
   
   <!-- ZED camera sensor configuration for Gazebo -->
-  <gazebo reference="zed_left_camera_frame">
+  <gazebo reference="zed_left_camera_frame_optical">
     <sensor name="zed_camera" type="depth">
       <visualize>false</visualize>
       <update_rate>10.0</update_rate>
@@ -200,7 +200,7 @@
       </plugin>
     </sensor>
   </gazebo>
-  <gazebo reference="zed_left_camera_frame">
+  <gazebo reference="zed_left_camera_frame_optical">
     <sensor name="zed_imu" type="imu">
       <always_on>true</always_on>
       <update_rate>100</update_rate>
