@@ -128,7 +128,7 @@
   <!-- ========================================= -->
   
   <!-- ZED camera sensor configuration for Gazebo -->
-  <gazebo reference="zed_left_camera_frame_optical">
+  <gazebo reference="zed_left_camera_frame">
     <sensor name="zed_camera" type="depth">
       <visualize>false</visualize>
       <update_rate>10.0</update_rate>
@@ -160,7 +160,7 @@
           <remapping>zed_camera/points:=zed_node/point_cloud/cloud_registered</remapping>
           <remapping>zed_camera/depth/camera_info:=zed_node/depth/camera_info</remapping>
         </ros>      
-	<frame_name>zed_left_camera_frame_optical</frame_name>
+	<frame_name>zed_left_camera_optical_frame</frame_name>
         <min_depth>0.3</min_depth>
         <max_depth>20.0</max_depth>
         
@@ -200,7 +200,7 @@
       </plugin>
     </sensor>
   </gazebo>
-  <gazebo reference="zed_left_camera_frame_optical">
+  <gazebo reference="zed_left_camera_frame">
     <sensor name="zed_imu" type="imu">
       <always_on>true</always_on>
       <update_rate>100</update_rate>
