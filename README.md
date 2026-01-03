@@ -98,7 +98,7 @@ To launch the robot in the Gazebo simulation environment:
 ```bash
 ros2 launch kratos_gazebo kratos_gazebo.launch.py
 ```
-This will open Gazebo with the Kratos rover spawned in the `cones.world`.
+
 
 ### Navigation
 To start the Navigation stack (ensure simulation is running first):
@@ -121,3 +121,46 @@ ros2 launch kratos_rtabmap kratos_rtabmap.launch.py visual_odometry:=true
 ```
 
 This will open the RTAB-Map visualization window where you can see the map being built in real-time.
+
+## Real Robot Deployment
+
+To deploy this stack on the physical Kratos Rover with a real ZED 2i camera, you will need to make the following adjustments:
+
+### 1. General Configuration
+- **Disable Simulation Time**: Ensure `use_sim_time` is set to `false` in all launch files and configuration YAMLs.
+
+### 2. kratos_rtabmap
+Modify `kratos_rtabmap/launch/kratos_rtabmap.launch.py`:
+- **Set `use_sim_time` to `False`**:
+  ```python
+  parameters = [{
+      'use_sim_time': False,  # Change from True to False
+      # ... other parameters
+  }]
+  ```
+- **Verify Topic Remappings**: Check that the topics match your real ZED camera wrapper output.
+  ```python
+  common_remappings = [
+      ('rgb/image', '/zed/zed_node/left/image_rect_color'), # Verify namespace (e.g., /zed vs /zed2i)
+      ('rgb/camera_info', '/zed/zed_node/left/camera_info'),
+      ('depth/image', '/zed/zed_node/depth/depth_registered'),
+      ('imu', '/zed/zed_node/imu/data')
+  ]
+  ```
+- **Visual Odometry**: If you lack wheel encoders, launch with visual odometry enabled:
+  ```bash
+  ros2 launch kratos_rtabmap kratos_rtabmap.launch.py visual_odometry:=true
+  ```
+
+### 3. kratos_nav2
+- **Launch File**: In `kratos_nav2/launch/kratos_nav2.launch.py`, set `use_sim_time` to `'false'`.
+- **Parameters**: In `kratos_nav2/config/nav2_params.yaml`, change all instances of `use_sim_time: true` to `use_sim_time: false`.
+- **Robot Footprint**: Verify that `robot_radius` (currently 0.3m) in `nav2_params.yaml` matches the physical robot's dimensions.
+
+### 4. Hardware Drivers
+- **ZED Camera**: Ensure the `zed_wrapper` is running and publishing to the expected topics.
+- **TF Tree**: You must publish the robot's static transforms. You can use the `kratos_description` package to launch the `robot_state_publisher` without Gazebo:
+  ```bash
+  ros2 launch kratos_description kratos_description.launch.py # (You may need to create this launch file if it doesn't exist, or use a generic state publisher launch)
+  ```
+
