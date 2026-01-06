@@ -1,0 +1,63 @@
+<?xml version="1.0" ?>
+<sdf version="1.5">
+  <world name="default">
+    <include>
+      <uri>model://ground_plane</uri>
+    </include>
+    <include>
+      <uri>model://sun</uri>
+    </include>
+
+    <include>
+      <uri>model://construction_cone_red</uri>
+      <name>cone_red_1</name>
+      <pose>-3.86 -0.63 0 0 0 0</pose>
+    </include>
+    <include>
+      <uri>model://construction_cone_red</uri>
+      <name>cone_red_2</name>
+      <pose>-3.05 9.42 0 0 0 0</pose>
+    </include>
+    <include>
+      <uri>model://construction_cone_blue</uri>
+      <name>cone_blue_1</name>
+      <pose>3.61 7.85 0 0 0 0</pose>
+    </include>
+    <include>
+      <uri>model://construction_cone_blue</uri>
+      <name>cone_blue_2</name>
+      <pose>-6.95 2.45 0 0 0 0</pose>
+    </include>
+    <include>
+      <uri>model://construction_cone_yellow</uri>
+      <name>cone_yellow_1</name>
+      <pose>3.71 -5.36 0 0 0 0</pose>
+    </include>
+    <include>
+      <uri>model://construction_cone_yellow</uri>
+      <name>cone_yellow_2</name>
+      <pose>2.69 -7.58 0 0 0 0</pose>
+    </include>
+    <include>
+      <uri>model://construction_cone_white</uri>
+      <name>cone_white_1</name>
+      <pose>8.11 1.36 0 0 0 0</pose>
+    </include>
+    <include>
+      <uri>model://construction_cone_white</uri>
+      <name>cone_white_2</name>
+      <pose>9.66 -9.6 0 0 0 0</pose>
+    </include>
+    <include>
+      <uri>model://construction_cone_green</uri>
+      <name>cone_green_1</name>
+      <pose>2.93 -0.66 0 0 0 0</pose>
+    </include>
+    <include>
+      <uri>model://construction_cone_green</uri>
+      <name>cone_green_2</name>
+      <pose>0.2 -7.55 0 0 0 0</pose>
+    </include>
+  </world>
+</sdf>
+
