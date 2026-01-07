@@ -1,99 +1,132 @@
 import os
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription, LaunchContext
-from launch.actions import DeclareLaunchArgument, OpaqueFunction
+from launch.actions import DeclareLaunchArgument
 from launch_ros.actions import Node
+from launch.actions import IncludeLaunchDescription, OpaqueFunction
 from launch.substitutions import LaunchConfiguration
-from launch.conditions import IfCondition, UnlessCondition
+from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch.conditions import UnlessCondition
+import tempfile
 
 def launch_setup(context: LaunchContext, *args, **kwargs):
-    
-    # Check if we are using visual odometry or wheel odometry
-    use_visual_odom = LaunchConfiguration('visual_odometry').perform(context).lower() in ['true', '1']
-    
-    # Common Parameters
-    parameters = [{
-        'use_sim_time': True,
-        'frame_id': 'base_link',
-        'map_frame_id': 'map',
-        'publish_tf': True,
-        'subscribe_rgbd': True,
-        'approx_sync': True,
-        'wait_imu_to_init': True,
-        'qos': 2,
-        'Optimizer/Slam2D': 'true',
-        'Reg/Force3DoF': 'true',
-        # RTAB-Map Optimization parameters (optional but good for sim)
-        'Reg/Strategy': '0',       # 0=Visual, 1=ICP, 2=Visual+ICP
-        'RGBD/ProximityBySpace': 'false',
-    }]
-
-    # Define Remappings
-    # We map the inputs to your Simulation topics
-    common_remappings = [
-        ('rgb/image', '/zed/zed_node/left/image_rect_color'),
-        ('rgb/camera_info', '/zed/zed_node/left/camera_info'),
-        ('depth/image', '/zed/zed_node/depth/depth_registered'),
-        ('imu', '/zed/zed_node/imu/data')
-    ]
-
-    # LOGIC: 
-    # If Visual Odom is OFF, we must listen to Wheel Odom (/odom)
-    # If Visual Odom is ON, the rgbd_odometry node publishes to /odom (internally)
-    if not use_visual_odom:
-        parameters[0]['subscribe_odom_info'] = False # Wheel odom has no info covariance usually
-        common_remappings.append(('odom', '/odom')) # Connect to Diff Drive Controller
-
-    return [
-        # 1. RGB-D Sync Node
-        # Compresses RGB + Depth into a single "RGBDImage" message for RTAB-Map
-        Node(
-            package='rtabmap_sync',
-            executable='rgbd_sync',
-            output='screen',
-            parameters=parameters,
-            remappings=common_remappings
-        ),
-
-        # 2. Visual Odometry (Only runs if visual_odometry:=true)
-        # We generally KEEP THIS OFF for your simulation
-        Node(
-            package='rtabmap_odom',
-            executable='rgbd_odometry',
-            output='screen',
-            condition=IfCondition(LaunchConfiguration('visual_odometry')),
-            parameters=parameters,
-            remappings=common_remappings
-        ),
-
-        # 3. RTAB-Map SLAM ( The Brain )
-        Node(
-            package='rtabmap_slam',
-            executable='rtabmap',
-            output='screen',
-            parameters=parameters,
-            remappings=common_remappings,
-            arguments=['-d'] # Delete database on start
-        ),
-
-        # 4. Visualization (RTAB-Map Viz)
-        Node(
-            package='rtabmap_viz',
-            executable='rtabmap_viz',
-            output='screen',
-            parameters=parameters,
-            remappings=common_remappings
+    with tempfile.NamedTemporaryFile(mode='w+t', delete=False) as zed_override_file:
+        zed_override_file.write("---\n" +
+                                "/**:\n" +
+                                "    ros__parameters:\n" +
+                                "        general:\n" +
+                                "            grab_resolution: 'VGA'")
+        
+        # use_zed_odom = LaunchConfiguration('use_zed_odometry').perform(context) in ["True", "true"]
+        use_zed_odom = True
+        # Common parameters
+        common_params = {
+            'frame_id': 'zed_camera_link',        # robot base
+   	    'odom_frame_id': 'odom',        # local odometry
+            'map_frame_id': 'map',          # global map
+            'publish_tf': True,    
+            'subscribe_rgbd': True,
+            'approx_sync': True,
+            'wait_imu_to_init': True,
+            'queue_size': 50,
+            'sync_queue_size': 50,      # Increased from default 30
+            'topic_queue_size': 50,     # Increased from default 10
+            'Odom/Strategy': '0'  # 0=Frame-to-Map, 1=Frame-to-Frame
+        }
+        
+        # Remappings for rgbd_odometry
+        odom_remappings = [
+            ('imu', '/zed/zed_node/imu/data'),
+            ('rgbd_image', '/rgbd_image')
+        ]
+        
+        # Remappings for rtabmap and viz
+        rtabmap_remappings = [
+            ('imu', '/zed/zed_node/imu/data')
+        ]
+        
+        if use_zed_odom:
+            rtabmap_remappings.append(('odom', '/zed/zed_node/odom'))
+        else:
+            # rgbd_odometry will publish to /odom by default
+            pass
+        
+        nodes = [
+            # Launch camera driver
+            IncludeLaunchDescription(
+                PythonLaunchDescriptionSource([os.path.join(
+                    get_package_share_directory('zed_wrapper'), 'launch'),
+                    '/zed_camera.launch.py']),
+                launch_arguments={
+                    'camera_model': LaunchConfiguration('camera_model'),
+                    'ros_params_override_path': zed_override_file.name,
+                    'publish_tf': 'true',
+                    'publish_map_tf': 'true'
+                }.items(),
+            ),
+            
+            # Sync rgb/depth/camera_info together
+            Node(   
+                package='rtabmap_sync',
+                executable='rgbd_sync',
+                output='screen',
+                parameters=[common_params],
+                remappings=[
+                    ('rgb/image', '/zed/zed_node/rgb/color/rect/image'),
+                    ('rgb/camera_info', '/zed/zed_node/rgb/color/rect/camera_info'),
+                    ('depth/image', '/zed/zed_node/depth/depth_registered')
+                ]
+            ),
+        ]
+        
+        # Add rgbd_odometry only when NOT using ZED odometry
+        if not use_zed_odom:
+            nodes.append(
+                Node(
+                    package='rtabmap_odom',
+                    executable='rgbd_odometry',
+                    output='screen',
+                    parameters=[common_params],
+                    remappings=odom_remappings,
+                )
+            )
+        
+        # Add rtabmap
+        nodes.append(
+            Node(
+                package='rtabmap_slam',
+                executable='rtabmap',
+                output='screen',
+                parameters=[common_params],
+                remappings=rtabmap_remappings,
+                arguments=['-d']
+            )
         )
-    ]
+        
+        # Add visualization
+        nodes.append(
+            Node(
+                package='rtabmap_viz',
+                executable='rtabmap_viz',
+                output='screen',
+                parameters=[common_params],
+                remappings=rtabmap_remappings
+            )
+        )
+        
+        return nodes
 
 def generate_launch_description():
     return LaunchDescription([
-        # Argument to switch between Visual Odom (Cameras) and Wheel Odom (Encoders)
         DeclareLaunchArgument(
-            'visual_odometry', 
-            default_value='false',
-            description='If true, computes odometry from camera. If false, uses /odom topic.'
+            'use_zed_odometry',
+            default_value='true',
+            description='Use ZED odometry'
         ),
-        
+        DeclareLaunchArgument(
+            'camera_model',
+            default_value='zed2i',
+            description='ZED camera model'
+        ),
         OpaqueFunction(function=launch_setup)
     ])

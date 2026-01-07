@@ -2,11 +2,15 @@
     "ROS2.distro": "humble",
     "python.autoComplete.extraPaths": [
         "/home/d4y0n3/ros2_ws/install/kratos_rtabmap/lib/python3.10/site-packages",
+        "/home/d4y0n3/ros2_ws/install/rtabmap_python/lib/python3.10/site-packages",
+        "/home/d4y0n3/ros2_ws/install/rtabmap_msgs/local/lib/python3.10/dist-packages",
         "/opt/ros/humble/lib/python3.10/site-packages",
         "/opt/ros/humble/local/lib/python3.10/dist-packages"
     ],
     "python.analysis.extraPaths": [
         "/home/d4y0n3/ros2_ws/install/kratos_rtabmap/lib/python3.10/site-packages",
+        "/home/d4y0n3/ros2_ws/install/rtabmap_python/lib/python3.10/site-packages",
+        "/home/d4y0n3/ros2_ws/install/rtabmap_msgs/local/lib/python3.10/dist-packages",
         "/opt/ros/humble/lib/python3.10/site-packages",
         "/opt/ros/humble/local/lib/python3.10/dist-packages"
     ]

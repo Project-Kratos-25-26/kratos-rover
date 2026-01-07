@@ -7,6 +7,14 @@
       },
       "includePath": [
         "/home/d4y0n3/ros2_ws/install/zed_components/include/**",
+        "/home/d4y0n3/ros2_ws/install/rtabmap_slam/include/**",
+        "/home/d4y0n3/ros2_ws/install/rtabmap_odom/include/**",
+        "/home/d4y0n3/ros2_ws/install/rtabmap_util/include/**",
+        "/home/d4y0n3/ros2_ws/install/rtabmap_sync/include/**",
+        "/home/d4y0n3/ros2_ws/install/rtabmap_rviz_plugins/include/**",
+        "/home/d4y0n3/ros2_ws/install/rtabmap_conversions/include/**",
+        "/home/d4y0n3/ros2_ws/install/rtabmap_msgs/include/**",
+        "/home/d4y0n3/ros2_ws/install/rtabmap_costmap_plugins/include/**",
         "/home/d4y0n3/ros2_ws/install/gazebo_ros2_control/include/**",
         "/opt/ros/humble/include/**",
         "/usr/include/**"
