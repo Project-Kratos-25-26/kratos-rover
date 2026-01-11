@@ -3,6 +3,7 @@ from launch.actions import IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch_ros.substitutions import FindPackageShare
 from launch.substitutions import PathJoinSubstitution
+from launch_ros.actions import Node
 
 
 def generate_launch_description():
@@ -26,7 +27,8 @@ def generate_launch_description():
                 'use_sim_time': 'true',
                 'autostart': 'true',
                 'slam': 'false',
-                'params_file': params_file
+                'params_file': params_file,
+                'remappings': "[('cmd_vel', 'cmd_vel_unfiltered')]"
             }.items()
         )
     ])

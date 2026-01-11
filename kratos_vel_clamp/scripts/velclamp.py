@@ -18,14 +18,14 @@ class AngularClamp(Node):
         # --- ROS interfaces ---
         self.sub = self.create_subscription(
             Twist,
-            '/cmd_vel',
+            '/cmd_vel_unfiltered',
             self.cmd_vel_cb,
             10
         )
 
         self.pub = self.create_publisher(
             Twist,
-            '/cmd_vel_filtered',
+            '/cmd_vel',
             10
         )
 
