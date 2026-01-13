@@ -15,7 +15,7 @@ def launch_setup(context: LaunchContext, *args, **kwargs):
                                 "/**:\n" +
                                 "    ros__parameters:\n" +
                                 "        general:\n" +
-                                "            grab_resolution: 'VGA'")
+                                "            grab_resolution: 'HD720'")
         
         # use_zed_odom = LaunchConfiguration('use_zed_odometry').perform(context) in ["True", "true"]
         use_zed_odom = True
