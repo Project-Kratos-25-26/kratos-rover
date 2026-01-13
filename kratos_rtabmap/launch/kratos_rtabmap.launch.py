@@ -61,7 +61,9 @@ def launch_setup(context: LaunchContext, *args, **kwargs):
                     'camera_model': LaunchConfiguration('camera_model'),
                     'ros_params_override_path': zed_override_file.name,
                     'publish_tf': 'true',
-                    'publish_map_tf': 'true'
+                    'publish_map_tf': 'true',
+                    'publish_imu_tf': 'true',
+                    'sensors.publish_imu': 'true'
                 }.items(),
             ),
             
@@ -72,8 +74,8 @@ def launch_setup(context: LaunchContext, *args, **kwargs):
                 output='screen',
                 parameters=[common_params],
                 remappings=[
-                    ('rgb/image', '/zed/zed_node/rgb/color/rect/image'),
-                    ('rgb/camera_info', '/zed/zed_node/rgb/color/rect/camera_info'),
+                    ('rgb/image', '/zed/zed_node/left/image_rect_color'),
+                    ('rgb/camera_info', '/zed/zed_node/left/camera_info'),
                     ('depth/image', '/zed/zed_node/depth/depth_registered')
                 ]
             ),

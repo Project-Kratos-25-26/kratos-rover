@@ -160,7 +160,7 @@
           <remapping>zed_camera/points:=zed_node/point_cloud/cloud_registered</remapping>
           <remapping>zed_camera/depth/camera_info:=zed_node/depth/camera_info</remapping>
         </ros>      
-	<frame_name>zed_left_camera_frame_optical</frame_name>
+	<frame_name>zed_left_camera_optical_frame</frame_name>
         <min_depth>0.3</min_depth>
         <max_depth>20.0</max_depth>
         
