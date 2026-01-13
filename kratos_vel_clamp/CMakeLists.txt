@@ -13,6 +13,7 @@ find_package(geometry_msgs REQUIRED)
 install(
   PROGRAMS
     scripts/velclamp.py
+    scripts/publish_empty_map.py
   DESTINATION lib/${PROJECT_NAME}
 )
 
