@@ -27,8 +27,7 @@ def generate_launch_description():
                 'use_sim_time': 'true',
                 'autostart': 'true',
                 'slam': 'false',
-                'params_file': params_file,
-                'remappings': "[('cmd_vel', 'cmd_vel_unfiltered')]"
+                'params_file': params_file
             }.items()
         )
     ])

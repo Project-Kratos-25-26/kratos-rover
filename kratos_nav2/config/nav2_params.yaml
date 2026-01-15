@@ -91,17 +91,14 @@ local_costmap:
       footprint: "[[0.65, 0.6], [0.65, -0.6], [-0.65, -0.6], [-0.65, 0.6]]"
       footprint_padding: 0.03
 
-      plugins: ["voxel_layer", "inflation_layer"]
+      # CHANGED: Replaced voxel_layer with obstacle_layer
+      plugins: ["obstacle_layer", "inflation_layer"]
 
-      voxel_layer:
-        plugin: "nav2_costmap_2d::VoxelLayer"
+      # CHANGED: Configuration for ObstacleLayer (2D)
+      obstacle_layer:
+        plugin: "nav2_costmap_2d::ObstacleLayer"
         enabled: True
-        publish_voxel_map: True
-        origin_z: 0.0
-        z_resolution: 0.05
-        z_voxels: 16
         max_obstacle_height: 2.0
-        mark_threshold: 0
         observation_sources: scan pointcloud
         scan:
           topic: scan
@@ -116,7 +113,7 @@ local_costmap:
         pointcloud:
           topic: /zed/zed_node/point_cloud/cloud_registered
           max_obstacle_height: 2.0
-          min_obstacle_height: 0.1
+          min_obstacle_height: 0.1 # KEPT AS REQUESTED
           clearing: True
           marking: True
           data_type: "PointCloud2"
@@ -145,22 +142,19 @@ global_costmap:
       footprint: "[[0.65, 0.6], [0.65, -0.6], [-0.65, -0.6], [-0.65, 0.6]]"
       footprint_padding: 0.03
 
-      plugins: ["static_layer", "voxel_layer", "inflation_layer"]
+      # CHANGED: Replaced voxel_layer with obstacle_layer
+      plugins: ["static_layer", "obstacle_layer", "inflation_layer"]
 
       static_layer:
         plugin: "nav2_costmap_2d::StaticLayer"
         map_subscribe_transient_local: true
         map_topic: /map
 
-      voxel_layer:
-        plugin: "nav2_costmap_2d::VoxelLayer"
+      # CHANGED: Added ObstacleLayer config to Global Costmap so it sees dynamic obstacles
+      obstacle_layer:
+        plugin: "nav2_costmap_2d::ObstacleLayer"
         enabled: True
-        publish_voxel_map: True
-        origin_z: 0.0
-        z_resolution: 0.05
-        z_voxels: 16
         max_obstacle_height: 2.0
-        mark_threshold: 0
         observation_sources: scan pointcloud
         scan:
           topic: scan
@@ -175,7 +169,7 @@ global_costmap:
         pointcloud:
           topic: /zed/zed_node/point_cloud/cloud_registered
           max_obstacle_height: 2.0
-          min_obstacle_height: 0.1
+          min_obstacle_height: 0.1 # KEPT AS REQUESTED
           clearing: True
           marking: True
           data_type: "PointCloud2"

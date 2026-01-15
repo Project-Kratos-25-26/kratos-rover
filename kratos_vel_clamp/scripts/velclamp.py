@@ -10,7 +10,7 @@ class AngularClamp(Node):
         super().__init__('angular_clamp')
 
         # --- Tunable parameters ---
-        self.min_w = 0.5        # minimum angular velocity (rad/s)
+        self.min_w = 0.8       # minimum angular velocity (rad/s)
         self.max_w = 1.5        # maximum angular velocity (rad/s)
         self.deadband = 0.05    # ignore noise around zero
         self.w_in_max = 2.0     # expected max |angular.z| from upstream
@@ -18,14 +18,14 @@ class AngularClamp(Node):
         # --- ROS interfaces ---
         self.sub = self.create_subscription(
             Twist,
-            '/cmd_vel_unfiltered',
+            '/cmd_vel',
             self.cmd_vel_cb,
             10
         )
 
         self.pub = self.create_publisher(
             Twist,
-            '/cmd_vel',
+            '/cmd_vel_filt',
             10
         )
 
