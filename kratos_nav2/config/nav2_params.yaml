@@ -1,13 +1,14 @@
+---
 # =====================================================
 # BT Navigator
 # =====================================================
 bt_navigator:
   ros__parameters:
-    use_sim_time: true
+    use_sim_time: false
     global_frame: map
     robot_base_frame: base_link
     odom_topic: odom
-    bt_loop_duration: 10
+    bt_loop_duration: 50
     default_server_timeout: 20
 
 # =====================================================
@@ -15,7 +16,7 @@ bt_navigator:
 # =====================================================
 planner_server:
   ros__parameters:
-    use_sim_time: true
+    use_sim_time: false
     expected_planner_frequency: 5.0
     planner_plugins: ["GridBased"]
 
@@ -34,12 +35,13 @@ planner_server:
 # =====================================================
 controller_server:
   ros__parameters:
-    use_sim_time: true
+    use_sim_time: false
     controller_frequency: 10.0
     min_x_velocity_threshold: 0.001
-    min_y_velocity_threshold: 0.5
+    min_y_velocity_threshold: 0.0
     min_theta_velocity_threshold: 0.001
     failure_tolerance: 0.3
+    transform_tolerance: 0.5
     progress_checker_plugin: "progress_checker"
     goal_checker_plugins: ["general_goal_checker"]
     controller_plugins: ["FollowPath"]
@@ -53,7 +55,7 @@ controller_server:
       plugin: "nav2_controller::SimpleGoalChecker"
       xy_goal_tolerance: 0.25
       yaw_goal_tolerance: 6.29
-      stateful: True
+      stateful: true
 
     FollowPath:
       plugin: "nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController"
@@ -80,7 +82,7 @@ controller_server:
 local_costmap:
   local_costmap:
     ros__parameters:
-      use_sim_time: true
+      use_sim_time: false
       global_frame: odom
       robot_base_frame: base_link
       rolling_window: true
@@ -91,31 +93,87 @@ local_costmap:
       footprint: "[[0.65, 0.6], [0.65, -0.6], [-0.65, -0.6], [-0.65, 0.6]]"
       footprint_padding: 0.03
 
-      # CHANGED: Replaced voxel_layer with obstacle_layer
       plugins: ["obstacle_layer", "inflation_layer"]
 
-      # CHANGED: Configuration for ObstacleLayer (2D)
       obstacle_layer:
         plugin: "nav2_costmap_2d::ObstacleLayer"
-        enabled: True
+        enabled: true
         max_obstacle_height: 2.0
         observation_sources: scan pointcloud
+
         scan:
           topic: scan
           max_obstacle_height: 2.0
-          clearing: True
-          marking: True
+          clearing: true
+          marking: true
           data_type: "LaserScan"
           raytrace_max_range: 3.0
           raytrace_min_range: 0.0
           obstacle_max_range: 2.5
           obstacle_min_range: 0.0
+
         pointcloud:
           topic: /zed/zed_node/point_cloud/cloud_registered
           max_obstacle_height: 2.0
-          min_obstacle_height: 0.1 # KEPT AS REQUESTED
-          clearing: True
-          marking: True
+          min_obstacle_height: 0.1
+          clearing: true
+          marking: true
+          data_type: "PointCloud2"
+          raytrace_max_range: 3.0
+          raytrace_min_range: 0.0
+          obstacle_max_range: 2.5
+          obstacle_min_range: 0.0
+
+      inflation_layer:
+        plugin: "nav2_costmap_2d::InflationLayer"
+        inflation_radius: 0.9
+        cost_scaling_factor: 5.0
+
+# =====================================================
+# Global Costmap (MAP frame)
+# =====================================================
+global_costmap:
+  global_costmap:
+    ros__parameters:
+      use_sim_time: false
+      global_frame: map
+      robot_base_frame: base_link
+      resolution: 0.05
+      track_unknown_space: true
+
+      footprint: "[[0.65, 0.6], [0.65, -0.6], [-0.65, -0.6], [-0.65, 0.6]]"
+      footprint_padding: 0.03
+
+      plugins: ["static_layer", "obstacle_layer", "inflation_layer"]
+
+      static_layer:
+        plugin: "nav2_costmap_2d::StaticLayer"
+        map_subscribe_transient_local: true
+        map_topic: /map
+
+      obstacle_layer:
+        plugin: "nav2_costmap_2d::ObstacleLayer"
+        enabled: true
+        max_obstacle_height: 2.0
+        observation_sources: scan pointcloud
+
+        scan:
+          topic: scan
+          max_obstacle_height: 2.0
+          clearing: true
+          marking: true
+          data_type: "LaserScan"
+          raytrace_max_range: 3.0
+          raytrace_min_range: 0.0
+          obstacle_max_range: 2.5
+          obstacle_min_range: 0.0
+
+        pointcloud:
+          topic: /zed/zed_node/point_cloud/cloud_registered
+          max_obstacle_height: 2.0
+          min_obstacle_height: 0.1
+          clearing: true
+          marking: true
           data_type: "PointCloud2"
           raytrace_max_range: 3.0
           raytrace_min_range: 0.0
@@ -128,73 +186,11 @@ local_costmap:
         cost_scaling_factor: 3.0
 
 # =====================================================
-# Global Costmap (MAP frame)
-# =====================================================
-global_costmap:
-  global_costmap:
-    ros__parameters:
-      use_sim_time: true
-      global_frame: map
-      robot_base_frame: base_link
-      resolution: 0.05
-      track_unknown_space: true
-
-      footprint: "[[0.65, 0.6], [0.65, -0.6], [-0.65, -0.6], [-0.65, 0.6]]"
-      footprint_padding: 0.03
-
-      # CHANGED: Replaced voxel_layer with obstacle_layer
-      plugins: ["static_layer", "obstacle_layer", "inflation_layer"]
-
-      static_layer:
-        plugin: "nav2_costmap_2d::StaticLayer"
-        map_subscribe_transient_local: true
-        map_topic: /map
-
-      # CHANGED: Added ObstacleLayer config to Global Costmap so it sees dynamic obstacles
-      obstacle_layer:
-        plugin: "nav2_costmap_2d::ObstacleLayer"
-        enabled: True
-        max_obstacle_height: 2.0
-        observation_sources: scan pointcloud
-        scan:
-          topic: scan
-          max_obstacle_height: 2.0
-          clearing: True
-          marking: True
-          data_type: "LaserScan"
-          raytrace_max_range: 3.0
-          raytrace_min_range: 0.0
-          obstacle_max_range: 2.5
-          obstacle_min_range: 0.0
-        pointcloud:
-          topic: /zed/zed_node/point_cloud/cloud_registered
-          max_obstacle_height: 2.0
-          min_obstacle_height: 0.1 # KEPT AS REQUESTED
-          clearing: True
-          marking: True
-          data_type: "PointCloud2"
-          raytrace_max_range: 3.0
-          raytrace_min_range: 0.0
-          obstacle_max_range: 2.5
-          obstacle_min_range: 0.0
-
-      inflation_layer:
-        plugin: "nav2_costmap_2d::InflationLayer"
-        inflation_radius: 1.0
-        cost_scaling_factor: 3.0
-
-# =====================================================
 # Behavior Server
 # =====================================================
 behavior_server:
   ros__parameters:
-    use_sim_time: true
+    use_sim_time: false
     costmap_topic: local_costmap/costmap_raw
     footprint_topic: local_costmap/published_footprint
 
-# =====================================================
-# Velocity Smoother
-# =====================================================
-velocity_smoother:
-  ros__parameters:
-    use_sim_time: true
