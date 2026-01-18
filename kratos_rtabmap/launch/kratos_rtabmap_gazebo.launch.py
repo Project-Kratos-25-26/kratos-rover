@@ -11,6 +11,9 @@ def launch_setup(context: LaunchContext, *args, **kwargs):
     # Check if we are using visual odometry or wheel odometry
     use_visual_odom = LaunchConfiguration('visual_odometry').perform(context).lower() in ['true', '1']
     
+    # Retrieve the configuration
+    new_map_val = LaunchConfiguration('new_map')
+
     # Common Parameters
     parameters = [{
         'use_sim_time': True,
@@ -80,7 +83,7 @@ def launch_setup(context: LaunchContext, *args, **kwargs):
             output='screen',
             parameters=parameters,
             remappings=common_remappings,
-            arguments=['-d'] # Delete database on start
+            # arguments=['-d']  Delete database on start
         ),
 
         # 4. Visualization (RTAB-Map Viz)
@@ -100,6 +103,13 @@ def generate_launch_description():
             'visual_odometry', 
             default_value='false',
             description='If true, computes odometry from camera. If false, uses /odom topic.'
+        ),
+
+        # Argument to decide if map should be reset
+        DeclareLaunchArgument(
+            'new_map',
+            default_value='false',
+            description='Set to "true" to delete the database and start fresh.'
         ),
         
         OpaqueFunction(function=launch_setup)
