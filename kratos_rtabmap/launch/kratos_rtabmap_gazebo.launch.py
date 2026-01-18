@@ -19,11 +19,19 @@ def launch_setup(context: LaunchContext, *args, **kwargs):
         'publish_tf': True,
         'subscribe_rgbd': True,
         'approx_sync': True,
+        
+        # --- CRITICAL FIXES FOR SYNC ISSUES ---
+        'approx_sync_max_interval': 1.0, # Allow 0.3s delay between RGB and Depth
+        'queue_size': 20,                # Buffer more messages
+        'sync_queue_size': 20,           # Buffer specific to rgbd_sync
+        'topic_queue_size': 20,          # Buffer for rtabmap inputs
+        # --------------------------------------
+
         'wait_imu_to_init': True,
         'qos': 2,
         'Optimizer/Slam2D': 'true',
         'Reg/Force3DoF': 'true',
-        # RTAB-Map Optimization parameters (optional but good for sim)
+        # RTAB-Map Optimization parameters
         'Reg/Strategy': '0',       # 0=Visual, 1=ICP, 2=Visual+ICP
         'RGBD/ProximityBySpace': 'false',
     }]
@@ -39,10 +47,9 @@ def launch_setup(context: LaunchContext, *args, **kwargs):
 
     # LOGIC: 
     # If Visual Odom is OFF, we must listen to Wheel Odom (/odom)
-    # If Visual Odom is ON, the rgbd_odometry node publishes to /odom (internally)
     if not use_visual_odom:
-        parameters[0]['subscribe_odom_info'] = False # Wheel odom has no info covariance usually
-        common_remappings.append(('odom', '/odom')) # Connect to Diff Drive Controller
+        parameters[0]['subscribe_odom_info'] = False 
+        common_remappings.append(('odom', '/odom')) 
 
     return [
         # 1. RGB-D Sync Node
