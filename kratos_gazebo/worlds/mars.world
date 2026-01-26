@@ -18,11 +18,13 @@
         <falloff>0</falloff>
       </spot>
     </light>
+
     <scene>
       <ambient>0 0 0 1</ambient>
       <shadows>0</shadows>
       <background>0.7 0.7 0.7 1</background>
     </scene>
+
     <model name='my_mesh'>
       <static>1</static>
       <link name='body'>
@@ -63,7 +65,8 @@
         <kinematic>0</kinematic>
       </link>
     </model>
-    <gravity>0 0 -3.71</gravity>
+
+    <gravity>0 0 -9.8</gravity>
     <magnetic_field>6e-06 2.3e-05 -4.2e-05</magnetic_field>
     <atmosphere type='adiabatic'/>
     <physics type='ode'>
@@ -79,6 +82,7 @@
       <elevation>0</elevation>
       <heading_deg>0</heading_deg>
     </spherical_coordinates>
+    
     <state world_name='default'>
       <sim_time>490 782000000</sim_time>
       <real_time>198 1081400</real_time>
@@ -98,6 +102,7 @@
         <pose>0 0 10 0 -0 0</pose>
       </light>
     </state>
+
     <gui fullscreen='0'>
       <camera name='user_camera'>
         <pose>7.59839 6.09551 3.11571 0 0.087643 -0.503811</pose>
@@ -105,5 +110,177 @@
         <projection_type>perspective</projection_type>
       </camera>
     </gui>
+
+    <model name='cone_blue_1'>
+      <pose>6 6 5 0 -0 0</pose> 
+      <link name='link'>
+        <collision name='collision'>
+          <geometry>
+            <mesh>
+              <scale>2.286 2.286 2.286</scale>
+              <uri>model://construction_cone/meshes/construction_cone.dae</uri>
+            </mesh>
+          </geometry>
+          <surface>
+            <friction>
+              <ode>
+                <mu>100.0</mu>
+                <mu2>50.0</mu2>
+              </ode>
+            </friction>
+          </surface>
+        </collision>
+        <visual name='visual'>
+          <geometry>
+            <mesh>
+              <scale>2.286 2.286 2.286</scale>
+              <uri>model://construction_cone/meshes/construction_cone.dae</uri>
+            </mesh>
+          </geometry>
+          <material>
+            <script>
+              <name>Gazebo/Blue</name>
+              <uri>file://media/materials/scripts/gazebo.material</uri>
+            </script>
+          </material>
+        </visual>
+        <inertial>
+          <mass>50</mass> 
+          <inertia>
+            <ixx>1.0</ixx> <ixy>0</ixy> <ixz>0</ixz>
+            <iyy>1.0</iyy> <iyz>0</iyz> <izz>1.0</izz>
+          </inertia>
+        </inertial>
+      </link>
+    </model>
+
+    <model name='cone_blue_2'>
+      <pose>19.42 4.95 4.8 0 -0 0</pose>
+      <link name='link'>
+        <collision name='collision'>
+          <geometry>
+            <mesh>
+              <scale>2.286 2.286 2.286</scale>
+              <uri>model://construction_cone/meshes/construction_cone.dae</uri>
+            </mesh>
+          </geometry>
+          <surface>
+            <friction>
+              <ode>
+                <mu>100.0</mu>
+                <mu2>50.0</mu2>
+              </ode>
+            </friction>
+          </surface>
+        </collision>
+        <visual name='visual'>
+          <geometry>
+            <mesh>
+              <scale>2.286 2.286 2.286</scale>
+              <uri>model://construction_cone/meshes/construction_cone.dae</uri>
+            </mesh>
+          </geometry>
+          <material>
+            <script>
+              <name>Gazebo/Blue</name>
+              <uri>file://media/materials/scripts/gazebo.material</uri>
+            </script>
+          </material>
+        </visual>
+        <inertial>
+          <mass>50</mass>
+          <inertia>
+            <ixx>1.0</ixx> <ixy>0</ixy> <ixz>0</ixz>
+            <iyy>1.0</iyy> <iyz>0</iyz> <izz>1.0</izz>
+          </inertia>
+        </inertial>
+      </link>
+    </model>
+
+    <model name='cone_red_1'>
+      <pose>18.16 1.64 4.6 0 -0 0</pose>
+      <link name='link'>
+        <collision name='collision'>
+          <geometry>
+            <mesh>
+              <scale>2.286 2.286 2.286</scale>
+              <uri>model://construction_cone/meshes/construction_cone.dae</uri>
+            </mesh>
+          </geometry>
+          <surface>
+            <friction>
+              <ode>
+                <mu>100.0</mu>
+                <mu2>50.0</mu2>
+              </ode>
+            </friction>
+          </surface>
+        </collision>
+        <visual name='visual'>
+          <geometry>
+            <mesh>
+              <scale>2.286 2.286 2.286</scale>
+              <uri>model://construction_cone/meshes/construction_cone.dae</uri>
+            </mesh>
+          </geometry>
+          <material>
+            <script>
+              <name>Gazebo/Red</name>
+              <uri>file://media/materials/scripts/gazebo.material</uri>
+            </script>
+          </material>
+        </visual>
+        <inertial>
+          <mass>50</mass>
+          <inertia>
+            <ixx>1.0</ixx> <ixy>0</ixy> <ixz>0</ixz>
+            <iyy>1.0</iyy> <iyz>0</iyz> <izz>1.0</izz>
+          </inertia>
+        </inertial>
+      </link>
+    </model>
+
+    <model name='cone_red_2'>
+      <pose>10 15 15 0 -0 0</pose>
+      <link name='link'>
+        <collision name='collision'>
+          <geometry>
+            <mesh>
+              <scale>2.286 2.286 2.286</scale>
+              <uri>model://construction_cone/meshes/construction_cone.dae</uri>
+            </mesh>
+          </geometry>
+          <surface>
+            <friction>
+              <ode>
+                <mu>100.0</mu>
+                <mu2>50.0</mu2>
+              </ode>
+            </friction>
+          </surface>
+        </collision>
+        <visual name='visual'>
+          <geometry>
+            <mesh>
+              <scale>2.286 2.286 2.286</scale>
+              <uri>model://construction_cone/meshes/construction_cone.dae</uri>
+            </mesh>
+          </geometry>
+          <material>
+            <script>
+              <name>Gazebo/Red</name>
+              <uri>file://media/materials/scripts/gazebo.material</uri>
+            </script>
+          </material>
+        </visual>
+        <inertial>
+          <mass>50</mass>
+          <inertia>
+            <ixx>1.0</ixx> <ixy>0</ixy> <ixz>0</ixz>
+            <iyy>1.0</iyy> <iyz>0</iyz> <izz>1.0</izz>
+          </inertia>
+        </inertial>
+      </link>
+    </model>
   </world>
 </sdf>
