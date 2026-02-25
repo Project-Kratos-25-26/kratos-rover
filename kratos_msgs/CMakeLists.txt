@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.8)
-project(kratos_slam_toolbox)
+project(kratos_msgs)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
@@ -7,27 +7,16 @@ endif()
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
-find_package(rclpy REQUIRED)
-find_package(slam_toolbox REQUIRED)
-find_package(nav2_lifecycle_manager REQUIRED)
+find_package(rosidl_default_generators REQUIRED)
 
-
-install(
-  PROGRAMS
-    scripts/auto_serialize_map.py
-    scripts/load_map_on_start.py
-  DESTINATION lib/${PROJECT_NAME}
+rosidl_generate_interfaces(${PROJECT_NAME}
+  "msg/CameraStream.msg"
+  "msg/CameraStreamList.msg"
+  "srv/StartCameraStream.srv"
+  "srv/StopCameraStream.srv"
+  "srv/StartAllCameras.srv"
+  "srv/StopAllCameras.srv"
 )
-
-install(
-  DIRECTORY
-    launch
-    config
-    maps
-    scripts
-  DESTINATION share/${PROJECT_NAME}
-)
-
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
