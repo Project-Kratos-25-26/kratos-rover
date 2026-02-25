@@ -277,21 +277,25 @@ std::string GstStreamManager::build_pipeline_description(
     const GstCameraPipelineConfig & config) const
 {
     std::ostringstream ss;
-
     ss << "v4l2src device=" << config.camera_device << " ! "
        << "image/jpeg,width=" << config.width
        << ",height=" << config.height
        << ",framerate=" << config.fps << "/1 ! "
-       << "jpegdec ! "
-       << "x264enc tune=zerolatency "
-       << "bitrate=" << config.bitrate
-       << " speed-preset=ultrafast ! "
-       << "rtph264pay pt=96 ! "
-       << "udpsink host=" << config.destination_host
-       << " port=" << config.destination_port;
-
+       << "nvv4l2decoder mjpeg=1 ! "
+       << "nvvidconv ! "
+       << "video/x-raw(memory:NVMM),format=NV12 ! "
+       << "nvv4l2av1enc "
+       << "bitrate=" << config.bitrate * 1000 << " "
+       << "control-rate=1 "
+       << "iframeinterval=" << config.fps << " "
+       << "insert-seq-hdr=1 ! "
+       << "av1parse ! "
+       << "matroskamux streamable=true ! "
+       << "tcpserversink host=0.0.0.0"
+       << " port=" << config.destination_port
+       << " sync=false async=false";
     return ss.str();
-}   
+}
 
 void GstStreamManager::destroy_stream(StreamInstance & instance) const
 {

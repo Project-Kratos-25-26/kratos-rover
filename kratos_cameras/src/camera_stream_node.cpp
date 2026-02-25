@@ -80,33 +80,44 @@ void CameraStreamNode::update_available_devices()
 
     std::lock_guard<std::mutex> lock(cameras_mutex_);
 
-    // Step 2: Remove devices that are no longer available
+    // Step 2: Remove cameras whose devices are no longer available
     std::vector<std::string> to_remove;
-    for (const auto & [device_path, config] : cameras_by_device_)
+    for (const auto & [camera_name, config] : cameras_by_name_)
     {
-        if (currently_available.find(device_path) == currently_available.end())
+        if (currently_available.find(config.device) == currently_available.end())
         {
-            to_remove.push_back(device_path);
+            to_remove.push_back(camera_name);
         }
     }
 
-    for (const auto & device : to_remove)
+    for (const auto & camera_name : to_remove)
     {
+        const auto & config = cameras_by_name_.at(camera_name);
         std::string stop_message;
-        (void)gst_stream_manager_->stop_stream(device, stop_message);
-        RCLCPP_WARN(this->get_logger(), "Camera device no longer available: %s", device.c_str());
-        cameras_by_device_.erase(device);
+        (void)gst_stream_manager_->stop_stream(config.device, stop_message);
+        RCLCPP_WARN(this->get_logger(), "Camera device no longer available: %s (%s)", camera_name.c_str(), config.device.c_str());
+        cameras_by_name_.erase(camera_name);
     }
 
     // Step 3: Add newly discovered devices
     for (const auto & device_path : currently_available)
     {
-        if (cameras_by_device_.find(device_path) == cameras_by_device_.end())
+        // Check if any existing camera already uses this device
+        bool device_exists = false;
+        for (const auto & [camera_name, config] : cameras_by_name_)
+        {
+            if (config.device == device_path)
+            {
+                device_exists = true;
+                break;
+            }
+        }
+        if (!device_exists)
         {
             auto config = build_config_for_device(device_path);
             RCLCPP_INFO(this->get_logger(), "Discovered device: %s, Camera: %s, Port: %d",
                 config.device.c_str(), config.name.c_str(), config.port);
-            cameras_by_device_[device_path] = config;
+            cameras_by_name_[config.name] = config;
         }
     }
 }
@@ -117,7 +128,7 @@ void CameraStreamNode::publish_all_cameras()
 
     std::lock_guard<std::mutex> lock(cameras_mutex_);
     kratos_msgs::msg::CameraStreamList msg;
-    for (const auto & [device, config] : cameras_by_device_)
+    for (const auto & [camera_name, config] : cameras_by_name_)
     {
         kratos_msgs::msg::CameraStream stream;
         stream.camera_device = config.device;
@@ -138,17 +149,21 @@ void CameraStreamNode::sync_stream_states_from_gst()
     std::lock_guard<std::mutex> lock(cameras_mutex_);
     for (const auto & device : ended_streams)
     {
-        const auto it = cameras_by_device_.find(device);
-        if (it != cameras_by_device_.end())
+        // Find camera by device path
+        for (auto & [camera_name, config] : cameras_by_name_)
         {
-            it->second.active = false;
-            RCLCPP_WARN(this->get_logger(), "Detected ended stream for %s, cleaned up state", device.c_str());
+            if (config.device == device)
+            {
+                config.active = false;
+                RCLCPP_WARN(this->get_logger(), "Detected ended stream for %s (%s), cleaned up state", camera_name.c_str(), device.c_str());
+                break;
+            }
         }
     }
 
-    for (auto & [device, config] : cameras_by_device_)
+    for (auto & [camera_name, config] : cameras_by_name_)
     {
-        config.active = gst_stream_manager_->is_stream_active(device);
+        config.active = gst_stream_manager_->is_stream_active(config.device);
     }
 }
 
@@ -273,7 +288,7 @@ int CameraStreamNode::get_lowest_available_port() const
 {
     // Collect all used generic camera ports (9000+)
     std::set<int> used_ports;
-    for (const auto & [device_path, config] : cameras_by_device_)
+    for (const auto & [camera_name, config] : cameras_by_name_)
     {
         // Only track generic camera ports (9000+)
         if (config.port >= 9000)
@@ -296,11 +311,11 @@ void CameraStreamNode::handle_start_camera_stream(
     std::shared_ptr<kratos_msgs::srv::StartCameraStream::Response> response)
 {
     std::lock_guard<std::mutex> lock(cameras_mutex_);
-    const auto it = cameras_by_device_.find(request->camera_device);
-    if (it == cameras_by_device_.end())
+    const auto it = cameras_by_name_.find(request->camera_name);
+    if (it == cameras_by_name_.end())
     {
         response->success = false;
-        response->message = "Camera device not found: " + request->camera_device;
+        response->message = "Camera not found: " + request->camera_name;
         RCLCPP_WARN(this->get_logger(), "%s", response->message.c_str());
         return;
     }
@@ -328,17 +343,17 @@ void CameraStreamNode::handle_stop_camera_stream(
     std::shared_ptr<kratos_msgs::srv::StopCameraStream::Response> response)
 {
     std::lock_guard<std::mutex> lock(cameras_mutex_);
-    const auto it = cameras_by_device_.find(request->camera_device);
-    if (it == cameras_by_device_.end())
+    const auto it = cameras_by_name_.find(request->camera_name);
+    if (it == cameras_by_name_.end())
     {
         response->success = false;
-        response->message = "Camera device not found: " + request->camera_device;
+        response->message = "Camera not found: " + request->camera_name;
         RCLCPP_WARN(this->get_logger(), "%s", response->message.c_str());
         return;
     }
 
     std::string manager_message;
-    const bool stopped = gst_stream_manager_->stop_stream(request->camera_device, manager_message);
+    const bool stopped = gst_stream_manager_->stop_stream(it->second.device, manager_message);
     it->second.active = false;
     response->success = stopped;
     response->message = manager_message;
@@ -353,10 +368,10 @@ void CameraStreamNode::handle_start_all_cameras(
     std::lock_guard<std::mutex> lock(cameras_mutex_);
     bool all_ok = true;
     int started_count = 0;
-    for (auto & [device_path, config] : cameras_by_device_)
+    for (auto & [camera_name, config] : cameras_by_name_)
     {
         GstCameraPipelineConfig pipeline_config;
-        pipeline_config.camera_device = device_path;
+        pipeline_config.camera_device = config.device;
         pipeline_config.format = config.format;
         pipeline_config.width = config.resolution.width;
         pipeline_config.height = config.resolution.height;
@@ -375,7 +390,7 @@ void CameraStreamNode::handle_start_all_cameras(
         else
         {
             all_ok = false;
-            RCLCPP_ERROR(this->get_logger(), "Failed to start %s: %s", device_path.c_str(), manager_message.c_str());
+            RCLCPP_ERROR(this->get_logger(), "Failed to start %s (%s): %s", camera_name.c_str(), config.device.c_str(), manager_message.c_str());
         }
     }
 
@@ -391,9 +406,9 @@ void CameraStreamNode::handle_stop_all_cameras(
     (void)request;
     std::lock_guard<std::mutex> lock(cameras_mutex_);
     gst_stream_manager_->stop_all_streams();
-    for (auto & [device_path, config] : cameras_by_device_)
+    for (auto & [camera_name, config] : cameras_by_name_)
     {
-        (void)device_path;
+        (void)camera_name;
         config.active = false;
     }
 

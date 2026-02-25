@@ -1,8 +1,8 @@
 camera_stream_node:
   ros__parameters:
-    stream.destination_host: 127.0.0.1
+    stream.destination_host: 192.168.1.69
 
-    profiles.normal.bitrate: 4000
+    profiles.normal.bitrate: 8000
     profiles.normal.width: 1280
     profiles.normal.height: 720
     profiles.normal.fps: 30

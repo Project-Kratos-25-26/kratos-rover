@@ -87,7 +87,7 @@ private:
     rclcpp::Service<kratos_msgs::srv::StopAllCameras>::SharedPtr stop_all_cameras_srv_;
     rclcpp::TimerBase::SharedPtr pub_timer_;
     rclcpp::TimerBase::SharedPtr device_discovery_timer_;
-    std::unordered_map<std::string, CameraStreamConfig> cameras_by_device_;
+    std::unordered_map<std::string, CameraStreamConfig> cameras_by_name_;
     StreamProfile normal_profile_;
     StreamProfile zed_profile_;
     StreamProfile gimbal_profile_;
