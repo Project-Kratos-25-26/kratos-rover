@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1000</width>
+    <height>600</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Kratos Cameras</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QHBoxLayout" name="mainLayout">
+    <!-- Left side: Camera Buttons -->
+    <item>
+     <widget class="QScrollArea" name="scrollArea">
+      <property name="minimumWidth">
+       <number>300</number>
+      </property>
+      <property name="maximumWidth">
+       <number>350</number>
+      </property>
+      <property name="widgetResizable">
+       <bool>true</bool>
+      </property>
+      <widget class="QWidget" name="scrollAreaWidgetContents">
+       <property name="geometry">
+        <rect>
+         <x>0</x>
+         <y>0</y>
+         <width>298</width>
+         <height>558</height>
+        </rect>
+       </property>
+       <layout class="QVBoxLayout" name="camerasLayout">
+        <property name="spacing">
+         <number>10</number>
+        </property>
+        <!-- Dynamic buttons go here -->
+        <item>
+         <spacer name="verticalSpacer">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>20</width>
+            <height>40</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+       </layout>
+      </widget>
+     </widget>
+    </item>
+
+    <!-- Right side: Video Display -->
+    <item>
+     <widget class="QLabel" name="videoLabel">
+      <property name="minimumSize">
+       <size>
+        <width>640</width>
+        <height>480</height>
+       </size>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignCenter</set>
+      </property>
+      <property name="text">
+       <string>No video feed</string>
+      </property>
+      <property name="styleSheet">
+       <string>background-color: #1a1a2e; color: #888; font-size: 16px; border-radius: 8px;</string>
+      </property>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

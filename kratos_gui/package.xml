@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>kratos_gui</name>
+  <version>0.0.0</version>
+  <description>Qt6 camera GUI for Kratos rover</description>
+  <maintainer email="debrajghosh232@gmail.com">zerob</maintainer>
+  <license>TODO: License declaration</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <depend>rclcpp</depend>
+  <depend>kratos_msgs</depend>
+
+  <build_depend>qt6-base-dev</build_depend>
+  <exec_depend>qt6-base-dev</exec_depend>
+
+  <build_depend>libgstreamer1.0-dev</build_depend>
+  <build_depend>libgstreamer-plugins-base1.0-dev</build_depend>
+  <exec_depend>gstreamer1.0-plugins-base</exec_depend>
+  <exec_depend>gstreamer1.0-plugins-good</exec_depend>
+  <exec_depend>gstreamer1.0-plugins-bad</exec_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>
