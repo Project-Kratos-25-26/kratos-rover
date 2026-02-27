@@ -18,17 +18,20 @@ void VideoWorker::startPipeline(QString host, int port) {
   // Tear down any existing pipeline first
   stopPipeline();
 
-  // AV1 Software decoding pipeline over UDP (RTP)
+  // AV1 decoding over TCP (Matroska container)
+  // Jetson sender uses: nvv4l2av1enc ! av1parse ! matroskamux ! tcpserversink
+  // GUI receives via TCP client, demuxes Matroska, decodes with av1dec (libaom, CPU)
+  
   QString pipelineStr =
-      QString("udpsrc port=%1 caps=\"application/x-rtp, media=(string)video, "
-              "clock-rate=(int)90000, encoding-name=(string)AV1\" "
-              "! rtpav1depay "
+      QString("tcpclientsrc host=%1 port=%2 "
+              "! matroskademux "
               "! av1parse "
-              "! avdec_av1 "
+              "! av1dec "
               "! videoconvert "
               "! videoscale "
-              "! video/x-raw,width=640,height=480,format=RGB "
+              "! video/x-raw,width=1280,height=720,format=RGB "
               "! appsink name=sink emit-signals=true sync=false")
+          .arg(host)
           .arg(port);
 
   GError *error = nullptr;
