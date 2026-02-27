@@ -283,17 +283,38 @@ std::string GstStreamManager::build_pipeline_description(
        << ",framerate=" << config.fps << "/1 ! "
        << "nvv4l2decoder mjpeg=1 ! "
        << "nvvidconv ! "
-       << "video/x-raw(memory:NVMM),format=NV12 ! "
-       << "nvv4l2av1enc "
-       << "bitrate=" << config.bitrate * 1000 << " "
-       << "control-rate=1 "
-       << "iframeinterval=" << config.fps << " "
-       << "insert-seq-hdr=1 ! "
-       << "av1parse ! "
-       << "matroskamux streamable=true ! "
-       << "tcpserversink host=0.0.0.0"
-       << " port=" << config.destination_port
-       << " sync=false async=false";
+       << "video/x-raw(memory:NVMM),format=NV12 ! ";
+
+    if (config.encoder == "h265")
+    {
+        ss << "nvv4l2h265enc "
+           << "bitrate=" << config.bitrate * 1000 << " "
+           << "iframeinterval=" << config.fps << " "
+           << "insert-sps-pps=1 "
+           << "control-rate=1 "
+           << "preset-level=1 "
+           << "EnableTwopassCBR=0 ! "
+           << "h265parse ! "
+           << "rtph265pay pt=96 config-interval=1 mtu=1200 ! "
+           << "udpsink host=" << config.destination_host
+           << " port=" << config.destination_port
+           << " sync=false async=false";
+    }
+    else
+    {
+        // Default to AV1
+        ss << "nvv4l2av1enc "
+           << "bitrate=" << config.bitrate * 1000 << " "
+           << "control-rate=1 "
+           << "iframeinterval=" << config.fps << " "
+           << "insert-seq-hdr=1 ! "
+           << "av1parse ! "
+           << "matroskamux streamable=true ! "
+           << "tcpserversink host=0.0.0.0"
+           << " port=" << config.destination_port
+           << " sync=false async=false";
+    }
+
     return ss.str();
 }
 

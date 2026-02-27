@@ -174,7 +174,7 @@ CameraStreamConfig CameraStreamNode::build_config_for_device(const std::string &
     const auto profile = get_profile_for_camera_name(name);
     Resolution resolution{profile.resolution.width, profile.resolution.height};
 
-    return {name, device, port, profile.fps, resolution, false, profile.bitrate, profile.format};
+    return {name, device, port, profile.fps, resolution, false, profile.bitrate, profile.format, profile.encoder};
 }
 
 void CameraStreamNode::load_stream_profiles()
@@ -186,6 +186,7 @@ void CameraStreamNode::load_stream_profiles()
         profile.resolution.height = this->declare_parameter<int>(prefix + ".height");
         profile.fps = this->declare_parameter<int>(prefix + ".fps");
         profile.format = this->declare_parameter<std::string>(prefix + ".format");
+        profile.encoder = this->declare_parameter<std::string>(prefix + ".encoder", "av1");
         return profile;
     };
 
@@ -329,6 +330,7 @@ void CameraStreamNode::handle_start_camera_stream(
     pipeline_config.bitrate = it->second.bitrate;
     pipeline_config.destination_host = stream_destination_host_;
     pipeline_config.destination_port = it->second.port;
+    pipeline_config.encoder = it->second.encoder;
 
     std::string manager_message;
     const bool started = gst_stream_manager_->start_stream(pipeline_config, manager_message);
@@ -379,6 +381,7 @@ void CameraStreamNode::handle_start_all_cameras(
         pipeline_config.bitrate = config.bitrate;
         pipeline_config.destination_host = stream_destination_host_;
         pipeline_config.destination_port = config.port;
+        pipeline_config.encoder = config.encoder;
 
         std::string manager_message;
         const bool started = gst_stream_manager_->start_stream(pipeline_config, manager_message);
