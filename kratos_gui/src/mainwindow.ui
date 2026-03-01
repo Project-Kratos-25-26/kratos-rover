@@ -6,79 +6,98 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1000</width>
-    <height>600</height>
+    <width>1200</width>
+    <height>800</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Kratos Cameras</string>
+   <string>Kratos Command Center</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <layout class="QHBoxLayout" name="mainLayout">
-    <!-- Left side: Camera Buttons -->
+   <layout class="QVBoxLayout" name="mainLayout_v">
+    <property name="spacing">
+     <number>0</number>
+    </property>
+    <property name="leftMargin">
+     <number>0</number>
+    </property>
+    <property name="topMargin">
+     <number>0</number>
+    </property>
+    <property name="rightMargin">
+     <number>0</number>
+    </property>
+    <property name="bottomMargin">
+     <number>0</number>
+    </property>
+    
     <item>
-     <widget class="QScrollArea" name="scrollArea">
-      <property name="minimumWidth">
-       <number>300</number>
-      </property>
-      <property name="maximumWidth">
-       <number>350</number>
-      </property>
-      <property name="widgetResizable">
-       <bool>true</bool>
-      </property>
-      <widget class="QWidget" name="scrollAreaWidgetContents">
-       <property name="geometry">
-        <rect>
-         <x>0</x>
-         <y>0</y>
-         <width>298</width>
-         <height>558</height>
-        </rect>
-       </property>
-       <layout class="QVBoxLayout" name="camerasLayout">
-        <property name="spacing">
-         <number>10</number>
-        </property>
-        <!-- Dynamic buttons go here -->
+     <widget class="QStackedWidget" name="stackedWidget">
+      
+      <!-- Page 1: Empty state -->
+      <widget class="QWidget" name="pageEmpty">
+       <layout class="QVBoxLayout" name="emptyLayout">
         <item>
-         <spacer name="verticalSpacer">
-          <property name="orientation">
-           <enum>Qt::Vertical</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>20</width>
-            <height>40</height>
-           </size>
-          </property>
+         <spacer name="verticalSpacerTop">
+          <property name="orientation"><enum>Qt::Vertical</enum></property>
+         </spacer>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayout">
+          <item>
+           <spacer name="horizontalSpacerLeft">
+            <property name="orientation"><enum>Qt::Horizontal</enum></property>
+           </spacer>
+          </item>
+          <item>
+           <widget class="QPushButton" name="bigAddBtn">
+            <property name="minimumSize">
+             <size>
+              <width>200</width>
+              <height>60</height>
+             </size>
+            </property>
+            <property name="text">
+             <string>ADD +</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer name="horizontalSpacerRight">
+            <property name="orientation"><enum>Qt::Horizontal</enum></property>
+           </spacer>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <spacer name="verticalSpacerBottom">
+          <property name="orientation"><enum>Qt::Vertical</enum></property>
          </spacer>
         </item>
        </layout>
       </widget>
+
+      <!-- Page 2: Tab view -->
+      <widget class="QWidget" name="pageTabs">
+       <layout class="QVBoxLayout" name="tabsLayout">
+        <property name="spacing"><number>0</number></property>
+        <property name="leftMargin"><number>0</number></property>
+        <property name="topMargin"><number>0</number></property>
+        <property name="rightMargin"><number>0</number></property>
+        <property name="bottomMargin"><number>0</number></property>
+        <item>
+         <widget class="QTabWidget" name="tabWidget">
+          <property name="tabsClosable">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+
      </widget>
     </item>
 
-    <!-- Right side: Video Display -->
-    <item>
-     <widget class="QLabel" name="videoLabel">
-      <property name="minimumSize">
-       <size>
-        <width>640</width>
-        <height>480</height>
-       </size>
-      </property>
-      <property name="alignment">
-       <set>Qt::AlignCenter</set>
-      </property>
-      <property name="text">
-       <string>No video feed</string>
-      </property>
-      <property name="styleSheet">
-       <string>background-color: #1a1a2e; color: #888; font-size: 16px; border-radius: 8px;</string>
-      </property>
-     </widget>
-    </item>
    </layout>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>

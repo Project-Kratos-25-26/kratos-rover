@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>CameraWidget</class>
+ <widget class="QWidget" name="CameraWidget">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1024</width>
+    <height>768</height>
+   </rect>
+  </property>
+  <layout class="QHBoxLayout" name="horizontalLayout">
+   <property name="spacing"><number>0</number></property>
+   <property name="leftMargin"><number>0</number></property>
+   <property name="topMargin"><number>0</number></property>
+   <property name="rightMargin"><number>0</number></property>
+   <property name="bottomMargin"><number>0</number></property>
+   <item>
+    <widget class="QSplitter" name="mainSplitter">
+     <property name="orientation"><enum>Qt::Horizontal</enum></property>
+     <property name="handleWidth"><number>4</number></property>
+     <!-- Left Sidebar -->
+     <widget class="QScrollArea" name="scrollArea">
+      <property name="minimumWidth"><number>250</number></property>
+      <property name="maximumWidth"><number>350</number></property>
+      <property name="widgetResizable"><bool>true</bool></property>
+      <widget class="QWidget" name="scrollAreaWidgetContents">
+       <layout class="QVBoxLayout" name="camerasLayout">
+        <property name="spacing"><number>10</number></property>
+        <property name="leftMargin"><number>15</number></property>
+        <property name="topMargin"><number>20</number></property>
+        <property name="rightMargin"><number>15</number></property>
+        <property name="bottomMargin"><number>20</number></property>
+        <item>
+         <spacer name="verticalSpacer">
+          <property name="orientation"><enum>Qt::Vertical</enum></property>
+         </spacer>
+        </item>
+       </layout>
+      </widget>
+     </widget>
+     <!-- Video Feed / Modules Splitter -->
+     <widget class="QSplitter" name="modulesSplitter">
+      <property name="orientation"><enum>Qt::Vertical</enum></property>
+      <property name="handleWidth"><number>4</number></property>
+      <widget class="QWidget" name="canvasWidget">
+       <property name="styleSheet">
+        <string>QWidget { background-color: #0A0A0A; }</string>
+       </property>
+      </widget>
+     </widget>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

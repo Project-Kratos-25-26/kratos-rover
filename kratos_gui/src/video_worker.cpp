@@ -20,8 +20,9 @@ void VideoWorker::startPipeline(QString host, int port) {
 
   // AV1 decoding over TCP (Matroska container)
   // Jetson sender uses: nvv4l2av1enc ! av1parse ! matroskamux ! tcpserversink
-  // GUI receives via TCP client, demuxes Matroska, decodes with av1dec (libaom, CPU)
-  
+  // GUI receives via TCP client, demuxes Matroska, decodes with av1dec (libaom,
+  // CPU)
+
   QString pipelineStr =
       QString("tcpclientsrc host=%1 port=%2 "
               "! matroskademux "

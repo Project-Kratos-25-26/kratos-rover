@@ -2,11 +2,11 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include <QPushButton>
 #include <QThread>
 #include <QVBoxLayout>
 
 #include "ros_worker.h"
-#include "video_worker.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -21,11 +21,9 @@ public:
   ~MainWindow() override;
 
 private slots:
-  void onCamerasUpdated(CameraStatusList cameras);
-  void onButtonClicked();
-  void onServiceResult(bool success, QString message);
-  void onNewFrame(QImage frame);
-  void onPipelineError(QString errorMsg);
+  void onAddCamClicked();
+  void onAddJoyNodeClicked();
+  void onTabCloseRequested(int index);
 
 private:
   Ui::MainWindow *ui;
@@ -33,15 +31,7 @@ private:
   QThread rosThread_;
   RosWorker *rosWorker_ = nullptr;
 
-  QThread videoThread_;
-  VideoWorker *videoWorker_ = nullptr;
-
-  // Layout where the buttons will be added dynamically
-  QVBoxLayout *cameraButtonsLayout_;
-
-  // Track the currently viewed camera so we know what port to connect to
-  QString currentViewedCamera_;
-  bool currentCameraIsActive_ = false;
+  void setupAddMenu(QPushButton *btn);
 };
 
 #endif // MAINWINDOW_H

@@ -14,6 +14,7 @@ set(CMAKE_AUTORCC ON)
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(kratos_msgs REQUIRED)
+find_package(sensor_msgs REQUIRED)
 find_package(Qt6 REQUIRED COMPONENTS Widgets)
 
 find_package(PkgConfig REQUIRED)
@@ -28,11 +29,21 @@ add_executable(kratos_gui
   src/main.cpp
   src/mainwindow.cpp
   src/mainwindow.h
+  src/mainwindow.ui
   src/ros_worker.cpp
   src/ros_worker.h
   src/video_worker.cpp
   src/video_worker.h
-  src/mainwindow.ui
+  src/camerawidget.cpp
+  src/camerawidget.h
+  src/camerawidget.ui
+  src/joynodewidget.cpp
+  src/joynodewidget.h
+  src/joynodewidget.ui
+  src/thrustpillarwidget.cpp
+  src/thrustpillarwidget.h
+  src/vectorradarwidget.cpp
+  src/vectorradarwidget.h
 )
 
 target_include_directories(kratos_gui PRIVATE
@@ -49,6 +60,7 @@ target_link_libraries(kratos_gui
 ament_target_dependencies(kratos_gui
   rclcpp
   kratos_msgs
+  sensor_msgs
 )
 
 install(TARGETS kratos_gui
