@@ -48,37 +48,50 @@ void CameraWidget::onCamerasUpdated(CameraStatusList cameras) {
   }
 
   if (cameras.isEmpty()) {
-    if (currentViewedCamera_ == "ZED" && currentCameraIsActive_) {
-      QMetaObject::invokeMethod(rosWorker_, "unsubscribeFromZed",
-                                Qt::QueuedConnection);
-      disconnect(rosWorker_, &RosWorker::zedImageReceived, this,
-                 &CameraWidget::onNewFrame);
-    } else {
-      QMetaObject::invokeMethod(videoWorker_, "stopPipeline",
-                                Qt::QueuedConnection);
+    // If we receive an empty list from the backend, it means no cameras are
+    // available. We should probably shut them all down except ZED (which
+    // bypasses this). Let's iterate through activePlayers_ and close non-ZED
+    // ones.
+    QList<QString> toRemove;
+    for (auto it = activePlayers_.constBegin(); it != activePlayers_.constEnd();
+         ++it) {
+      if (it.key() != "ZED") {
+        toRemove.append(it.key());
+      }
     }
-
-    ui->videoLabel->setText("NO VIDEO FEED");
-    ui->videoLabel->setProperty("active", false);
-    ui->videoLabel->style()->unpolish(ui->videoLabel);
-    ui->videoLabel->style()->polish(ui->videoLabel);
-    currentViewedCamera_.clear();
-    currentCameraIsActive_ = false;
+    for (const QString &name : toRemove) {
+      DraggableWrapper *wrapper = activePlayers_.take(name);
+      if (wrapper)
+        wrapper->deleteLater();
+    }
   } else {
-    bool foundCurrentViewed = false;
-
     for (const auto &camInfo : cameras) {
       QString name = camInfo.name;
       bool isActive = camInfo.active;
       int port = camInfo.port;
 
       if (name == "ZED") {
-        isActive = isZedLocallySubscribed_;
+        isActive = activePlayers_.contains("ZED");
+      } else {
+        // Force backend active state sync for generic cameras
+        if (isActive && !activePlayers_.contains(name)) {
+          // It's active on backend, but we don't have it displayed! We should
+          // auto-start it. (Or we just trust our local UI state and wait for
+          // user click). For now, let's keep local state as source of truth for
+          // display
+          isActive = activePlayers_.contains(name);
+        } else if (!isActive && activePlayers_.contains(name)) {
+          // Backend says false, but we have it. Close it.
+          DraggableWrapper *wrapper = activePlayers_.take(name);
+          if (wrapper)
+            wrapper->deleteLater();
+        }
       }
 
       QPushButton *btn = new QPushButton(name, ui->scrollAreaWidgetContents);
       btn->setProperty("cameraName", name);
       btn->setProperty("isActive", isActive);
+      btn->setProperty("port", port);
 
       QString btnStyle = R"(
                 QPushButton { 
@@ -120,43 +133,6 @@ void CameraWidget::onCamerasUpdated(CameraStatusList cameras) {
       connect(btn, &QPushButton::clicked, this, &CameraWidget::onButtonClicked);
       cameraButtonsLayout_->insertWidget(cameraButtonsLayout_->count() - 1,
                                          btn);
-
-      if (name == currentViewedCamera_) {
-        foundCurrentViewed = true;
-
-        if (name != "ZED") {
-          if (isActive && !currentCameraIsActive_) {
-            ui->videoLabel->setProperty("active", true);
-            ui->videoLabel->style()->unpolish(ui->videoLabel);
-            ui->videoLabel->style()->polish(ui->videoLabel);
-            ui->videoLabel->setText(QString("CONNECTING TO %1...").arg(name));
-
-            QMetaObject::invokeMethod(
-                videoWorker_, "startPipeline", Qt::QueuedConnection,
-                Q_ARG(QString, "192.168.1.10"), Q_ARG(int, port));
-          } else if (!isActive && currentCameraIsActive_) {
-            QMetaObject::invokeMethod(videoWorker_, "stopPipeline",
-                                      Qt::QueuedConnection);
-            ui->videoLabel->setProperty("active", false);
-            ui->videoLabel->style()->unpolish(ui->videoLabel);
-            ui->videoLabel->style()->polish(ui->videoLabel);
-            ui->videoLabel->setText("VIDEO STOPPED");
-          }
-          currentCameraIsActive_ = isActive;
-        }
-      }
-    }
-
-    if (!foundCurrentViewed && !currentViewedCamera_.isEmpty() &&
-        currentViewedCamera_ != "ZED") {
-      QMetaObject::invokeMethod(videoWorker_, "stopPipeline",
-                                Qt::QueuedConnection);
-      ui->videoLabel->setProperty("active", false);
-      ui->videoLabel->style()->unpolish(ui->videoLabel);
-      ui->videoLabel->style()->polish(ui->videoLabel);
-      ui->videoLabel->setText("CAMERA DISCONNECTED");
-      currentViewedCamera_.clear();
-      currentCameraIsActive_ = false;
     }
   }
 }

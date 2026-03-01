@@ -44,6 +44,10 @@ add_executable(kratos_gui
   src/thrustpillarwidget.h
   src/vectorradarwidget.cpp
   src/vectorradarwidget.h
+  src/videoplayerwidget.cpp
+  src/videoplayerwidget.h
+  src/draggablewrapper.cpp
+  src/draggablewrapper.h
 )
 
 target_include_directories(kratos_gui PRIVATE

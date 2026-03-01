@@ -1,7 +1,9 @@
 #ifndef CAMERAWIDGET_H
 #define CAMERAWIDGET_H
 
+#include <QList>
 #include <QMap>
+#include <QString>
 #include <QThread>
 #include <QVBoxLayout>
 #include <QWidget>
