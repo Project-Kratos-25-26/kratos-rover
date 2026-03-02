@@ -1,70 +1,66 @@
 #include "draggablewrapper.h"
+
+#include <QMouseEvent>
 #include <QPainter>
-#include <QPen>
 
 DraggableWrapper::DraggableWrapper(QWidget *childWidget, QWidget *parent)
-    : QWidget(parent), childWidget_(childWidget), isDragging_(false),
-      isResizing_(false) {
+    : QWidget(parent), childWidget_(childWidget) {
 
-  // We want to draw our own resize handle and handle mouse events
-  setAttribute(Qt::WA_StyledBackground, true);
-
-  // Layout to hold the child widget
+  // Set up layout
   layout_ = new QVBoxLayout(this);
-  layout_->setContentsMargins(borderMargin_, borderMargin_, borderMargin_,
-                              borderMargin_);
-  layout_->addWidget(childWidget_);
+  layout_->setContentsMargins(4, 20, 4, 4); // Extra top margin for drag handle
 
-  setMinimumSize(320, 240); // Minimum sensible video size
+  if (childWidget_) {
+    layout_->addWidget(childWidget_);
+  }
 
-  // Optional: Add a styled border that highlights on hover (could be done via
-  // CSS, but we do custom painting for the corner handle)
-  setStyleSheet(R"(
-        DraggableWrapper {
-            background-color: transparent;
-            border: 2px solid transparent;
-        }
-        DraggableWrapper:hover {
-            border: 2px solid #555555;
-        }
-    )");
+  setMouseTracking(true);
+  setAttribute(Qt::WA_StyledBackground, true);
+  setStyleSheet("DraggableWrapper { background-color: #2D2D2D; border: 1px "
+                "solid #555555; border-radius: 4px; }");
 
-  // Enable mouse tracking so we can change cursors but normally hover is enough
-  // setMouseTracking(true);
+  setMinimumSize(320, 240);
 }
 
 DraggableWrapper::~DraggableWrapper() {}
 
 void DraggableWrapper::mousePressEvent(QMouseEvent *event) {
   if (event->button() == Qt::LeftButton) {
-    if (event->pos().x() > width() - borderMargin_ &&
-        event->pos().y() > height() - borderMargin_) {
-      // Bottom-right corner clicked -> start resizing
+    QRect resizeRect(width() - resizeMargin_, height() - resizeMargin_,
+                     resizeMargin_, resizeMargin_);
+    QRect dragRect(0, 0, width(), 20); // Top bar for dragging
+
+    if (resizeRect.contains(event->pos())) {
       isResizing_ = true;
-      resizeStartGeometry_ = geometry();
-      dragStartPosition_ = event->globalPosition().toPoint();
-    } else {
-      // Clicked inside -> start dragging
+      dragPosition_ = event->pos();
+    } else if (dragRect.contains(event->pos())) {
       isDragging_ = true;
-      dragStartPosition_ = event->globalPosition().toPoint() - pos();
-      this->raise(); // Bring to front
+      dragPosition_ = event->pos();
     }
+    event->accept();
   }
 }
 
 void DraggableWrapper::mouseMoveEvent(QMouseEvent *event) {
-  if (isDragging_) {
-    // Move the window
-    move(event->globalPosition().toPoint() - dragStartPosition_);
-  } else if (isResizing_) {
-    // Resize the window
-    int dx = event->globalPosition().toPoint().x() - dragStartPosition_.x();
-    int dy = event->globalPosition().toPoint().y() - dragStartPosition_.y();
+  updateCursorShape(event->pos());
 
-    int newWidth = qMax(minimumWidth(), resizeStartGeometry_.width() + dx);
-    int newHeight = qMax(minimumHeight(), resizeStartGeometry_.height() + dy);
+  if (isDragging_) {
+    move(mapToParent(event->pos() - dragPosition_));
+    event->accept();
+  } else if (isResizing_) {
+    // Calculate the new size based on the movement of the mouse
+    int deltaX = event->pos().x() - dragPosition_.x();
+    int deltaY = event->pos().y() - dragPosition_.y();
+
+    int newWidth = qMax(minimumWidth(), width() + deltaX);
+    int newHeight = qMax(minimumHeight(), height() + deltaY);
 
     resize(newWidth, newHeight);
+
+    // Update drag position to current pos after resize
+    dragPosition_ = QPoint(event->pos().x() - deltaX + (newWidth - width()),
+                           event->pos().y() - deltaY + (newHeight - height()));
+    event->accept();
   }
 }
 
@@ -72,21 +68,38 @@ void DraggableWrapper::mouseReleaseEvent(QMouseEvent *event) {
   if (event->button() == Qt::LeftButton) {
     isDragging_ = false;
     isResizing_ = false;
+    event->accept();
+  }
+}
+
+void DraggableWrapper::updateCursorShape(const QPoint &pos) {
+  QRect resizeRect(width() - resizeMargin_, height() - resizeMargin_,
+                   resizeMargin_, resizeMargin_);
+  QRect dragRect(0, 0, width(), 20);
+
+  if (isResizing_ || resizeRect.contains(pos)) {
+    setCursor(Qt::SizeFDiagCursor);
+  } else if (isDragging_ || dragRect.contains(pos)) {
+    setCursor(Qt::SizeAllCursor);
+  } else {
+    setCursor(Qt::ArrowCursor);
   }
 }
 
 void DraggableWrapper::paintEvent(QPaintEvent *event) {
   QWidget::paintEvent(event);
 
-  // Draw a subtle resize handle in the bottom right corner
   QPainter painter(this);
-  painter.setRenderHint(QPainter::Antialiasing);
 
-  QPen pen(QColor("#888888"));
-  pen.setWidth(2);
-  painter.setPen(pen);
+  // Draw drag handle indicator
+  painter.setPen(QColor(120, 120, 120));
+  painter.drawLine(width() / 2 - 15, 10, width() / 2 + 15, 10);
+  painter.drawLine(width() / 2 - 15, 14, width() / 2 + 15, 14);
 
-  // Draw two little diagonal lines
-  painter.drawLine(width() - 8, height() - 2, width() - 2, height() - 8);
-  painter.drawLine(width() - 14, height() - 2, width() - 2, height() - 14);
+  // Draw resize handle
+  painter.setPen(QColor(150, 150, 150));
+  int w = width();
+  int h = height();
+  painter.drawLine(w - 12, h - 4, w - 4, h - 12);
+  painter.drawLine(w - 8, h - 4, w - 4, h - 8);
 }

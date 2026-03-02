@@ -2,13 +2,11 @@
 #define DRAGGABLEWRAPPER_H
 
 #include <QMouseEvent>
-#include <QPoint>
 #include <QVBoxLayout>
 #include <QWidget>
 
 class DraggableWrapper : public QWidget {
   Q_OBJECT
-
 public:
   explicit DraggableWrapper(QWidget *childWidget, QWidget *parent = nullptr);
   ~DraggableWrapper() override;
@@ -25,12 +23,13 @@ private:
   QWidget *childWidget_;
   QVBoxLayout *layout_;
 
-  bool isDragging_;
-  bool isResizing_;
-  QPoint dragStartPosition_;
-  QRect resizeStartGeometry_;
+  bool isDragging_ = false;
+  bool isResizing_ = false;
+  QPoint dragPosition_;
 
-  int borderMargin_ = 10; // Margin around the edge to trigger resize
+  const int resizeMargin_ = 15;
+
+  void updateCursorShape(const QPoint &pos);
 };
 
 #endif // DRAGGABLEWRAPPER_H

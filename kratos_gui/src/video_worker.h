@@ -4,6 +4,7 @@
 #include <QImage>
 #include <QObject>
 #include <QString>
+#include <QTimer>
 
 #include <gst/app/gstappsink.h>
 #include <gst/gst.h>
@@ -28,10 +29,19 @@ public slots:
   /// Stop and tear down the current pipeline.
   void stopPipeline();
 
+private slots:
+  /// Retry connecting the pipeline
+  void retryPipeline();
+
 private:
   static GstFlowReturn onNewSample(GstAppSink *sink, gpointer userData);
 
   GstElement *pipeline_ = nullptr;
+  QTimer *retryTimer_ = nullptr;
+  QString lastHost_;
+  int lastPort_ = 0;
+  int retryCount_ = 0;
+  const int MAX_RETRIES = 5;
 };
 
 #endif // VIDEO_WORKER_H

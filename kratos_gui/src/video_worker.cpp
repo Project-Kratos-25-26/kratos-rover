@@ -3,11 +3,21 @@
 #include <QDebug>
 #include <gst/video/video.h>
 
+// Define MAX_RETRIES (assuming it's not defined in the header)
+// This should ideally be in the header or a config file.
+#ifndef MAX_RETRIES
+#define MAX_RETRIES 5
+#endif
+
 VideoWorker::VideoWorker(QObject *parent) : QObject(parent) {
   // Ensure GStreamer is initialized (safe to call multiple times)
   if (!gst_is_initialized()) {
     gst_init(nullptr, nullptr);
   }
+
+  retryTimer_ = new QTimer(this);
+  retryTimer_->setSingleShot(true);
+  connect(retryTimer_, &QTimer::timeout, this, &VideoWorker::retryPipeline);
 }
 
 VideoWorker::~VideoWorker() { stopPipeline(); }
@@ -15,25 +25,31 @@ VideoWorker::~VideoWorker() { stopPipeline(); }
 // ─── Start Pipeline ────────────────────────────────────────────────
 
 void VideoWorker::startPipeline(QString host, int port) {
+  lastHost_ = host;
+  lastPort_ = port;
+  retryCount_ = 0;
+  retryPipeline();
+}
+
+void VideoWorker::retryPipeline() {
   // Tear down any existing pipeline first
   stopPipeline();
 
-  // AV1 decoding over TCP (Matroska container)
-  // Jetson sender uses: nvv4l2av1enc ! av1parse ! matroskamux ! tcpserversink
-  // GUI receives via TCP client, demuxes Matroska, decodes with av1dec (libaom,
-  // CPU)
+  // H265 decoding over UDP
+  // Jetson sender uses: nvv4l2h265enc ! h265parse ! rtph265pay ! udpsink
+  // GUI receives via UDP, extracts RTP payload, decodes with avdec_h265 (CPU)
 
   QString pipelineStr =
-      QString("tcpclientsrc host=%1 port=%2 "
-              "! matroskademux "
-              "! av1parse "
-              "! av1dec "
+      QString("udpsrc port=%1 "
+              "! application/x-rtp,media=video,encoding-name=H265,payload=96 "
+              "! rtph265depay "
+              "! h265parse "
+              "! avdec_h265 "
               "! videoconvert "
               "! videoscale "
               "! video/x-raw,width=1280,height=720,format=RGB "
               "! appsink name=sink emit-signals=true sync=false")
-          .arg(host)
-          .arg(port);
+          .arg(lastPort_);
 
   GError *error = nullptr;
   pipeline_ = gst_parse_launch(pipelineStr.toUtf8().constData(), &error);
@@ -64,15 +80,51 @@ void VideoWorker::startPipeline(QString host, int port) {
   GstStateChangeReturn ret =
       gst_element_set_state(pipeline_, GST_STATE_PLAYING);
   if (ret == GST_STATE_CHANGE_FAILURE) {
-    emit pipelineError("Failed to set pipeline to PLAYING");
+    // Try to get the specific error from the bus
+    GstBus *bus = gst_element_get_bus(pipeline_);
+    GstMessage *msg = gst_bus_poll(bus, GST_MESSAGE_ERROR, 0);
+    QString errorDetailed;
+    if (msg) {
+      GError *err = nullptr;
+      gchar *debug_info = nullptr;
+      gst_message_parse_error(msg, &err, &debug_info);
+      errorDetailed = QString::fromUtf8(err->message);
+      qWarning() << "GStreamer Error:" << err->message
+                 << "\nDebug info:" << (debug_info ? debug_info : "none");
+      g_clear_error(&err);
+      g_free(debug_info);
+      gst_message_unref(msg);
+    } else {
+      errorDetailed = "no specific error on bus";
+    }
+    gst_object_unref(bus);
+    gst_element_set_state(pipeline_, GST_STATE_NULL);
     gst_object_unref(pipeline_);
     pipeline_ = nullptr;
+
+    if (retryCount_ < MAX_RETRIES) {
+      retryCount_++;
+      qDebug() << "Pipeline start failed (" << errorDetailed
+               << "), retrying in 1 second... (" << retryCount_ << "/"
+               << MAX_RETRIES << ")";
+      retryTimer_->start(1000); // Retry in 1 second
+    } else {
+      emit pipelineError(
+          QString("Failed to set pipeline to PLAYING after %1 retries: %2")
+              .arg(MAX_RETRIES)
+              .arg(errorDetailed));
+    }
+  } else {
+    qDebug() << "Pipeline started successfully on port" << lastPort_;
   }
 }
 
 // ─── Stop Pipeline ─────────────────────────────────────────────────
 
 void VideoWorker::stopPipeline() {
+  if (retryTimer_ && retryTimer_->isActive()) {
+    retryTimer_->stop();
+  }
   if (pipeline_) {
     gst_element_set_state(pipeline_, GST_STATE_NULL);
     gst_object_unref(pipeline_);

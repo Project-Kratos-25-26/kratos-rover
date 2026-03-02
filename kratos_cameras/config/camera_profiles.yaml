@@ -7,7 +7,7 @@ camera_stream_node:
     profiles.normal.height: 720
     profiles.normal.fps: 30
     profiles.normal.format: MJPG
-    profiles.normal.encoder: av1  # Options: av1, h265
+    profiles.normal.encoder: h265 # Options: av1, h265
 
     profiles.zed.bitrate: 12000
     profiles.zed.width: 1920
