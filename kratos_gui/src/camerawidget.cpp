@@ -165,6 +165,8 @@ CameraWidget::CameraWidget(RosWorker *rosWorker, QWidget *parent)
 
   // Build initial grid (2×2)
   rebuildGrid(2, 2);
+
+  setupHotkeys();
 }
 
 CameraWidget::~CameraWidget() {
@@ -410,6 +412,119 @@ void CameraWidget::onSidebarCameraClicked() {
   } else {
     QMetaObject::invokeMethod(rosWorker_, "callStartStream",
                               Qt::QueuedConnection, Q_ARG(QString, name));
+  }
+}
+
+// ─── Hotkeys ───────────────────────────────────────────────────────
+
+void CameraWidget::setupHotkeys() {
+  // Ctrl + 1..9 to toggle camera 1..9
+  for (int i = 0; i < 9; ++i) {
+    QShortcut *shortcut = new QShortcut(QKeySequence(QString("Ctrl+%1").arg(i + 1)), this);
+    connect(shortcut, &QShortcut::activated, this, [this, i]() {
+      toggleCameraByIndex(i);
+    });
+  }
+
+  // Ctrl + A to toggle all cameras
+  QShortcut *toggleAllShortcut = new QShortcut(QKeySequence("Ctrl+A"), this);
+  connect(toggleAllShortcut, &QShortcut::activated, this, &CameraWidget::toggleAllCameras);
+
+  // Ctrl + R to focus layout dropdown
+  QShortcut *focusLayoutShortcut = new QShortcut(QKeySequence("Ctrl+R"), this);
+  connect(focusLayoutShortcut, &QShortcut::activated, this, [this]() {
+    if (layoutCombo_) {
+      layoutCombo_->setFocus();
+      layoutCombo_->showPopup();
+    }
+  });
+}
+
+void CameraWidget::toggleCameraByIndex(int index) {
+  if (index < 0 || index >= knownCameras_.size())
+    return;
+
+  // We want to simulate clicking the corresponding sidebar button.
+  // The sidebar buttons are in camerasListLayout_ and correspond 1:1 with knownCameras_
+  // but let's just trigger the service call directly based on knownCameras_[index] state
+  const CameraInfo &cam = knownCameras_[index];
+  
+  if (cam.active) {
+    // Unassign from any cells displaying this stream
+    for (int i = 0; i < cells_.size(); ++i) {
+      if (cells_[i].assignedCamera == cam.name) {
+        cells_[i].streamPicker->setCurrentIndex(0); // "None"
+      }
+    }
+    QMetaObject::invokeMethod(rosWorker_, "callStopStream",
+                              Qt::QueuedConnection, Q_ARG(QString, cam.name));
+  } else {
+    QMetaObject::invokeMethod(rosWorker_, "callStartStream",
+                              Qt::QueuedConnection, Q_ARG(QString, cam.name));
+  }
+}
+
+void CameraWidget::toggleAllCameras() {
+  if (knownCameras_.isEmpty()) return;
+
+  // Check if *all* are currently active
+  bool allActive = true;
+  for (const auto &cam : knownCameras_) {
+    if (!cam.active) {
+      allActive = false;
+      break;
+    }
+  }
+
+  if (allActive) {
+    // Turn all OFF
+    for (const auto &cam : knownCameras_) {
+      for (int i = 0; i < cells_.size(); ++i) {
+        if (cells_[i].assignedCamera == cam.name) {
+          cells_[i].streamPicker->setCurrentIndex(0);
+        }
+      }
+      QMetaObject::invokeMethod(rosWorker_, "callStopStream",
+                                Qt::QueuedConnection, Q_ARG(QString, cam.name));
+    }
+  } else {
+    // Turn all ON (that are currently off)
+    for (const auto &cam : knownCameras_) {
+      if (!cam.active) {
+        QMetaObject::invokeMethod(rosWorker_, "callStartStream",
+                                  Qt::QueuedConnection, Q_ARG(QString, cam.name));
+      }
+    }
+  }
+}
+
+void CameraWidget::pauseAllStreams() {
+  for (int i = 0; i < cells_.size(); ++i) {
+    if (!cells_[i].assignedCamera.isEmpty() && cells_[i].player) {
+      cells_[i].player->stopStream();
+      QMetaObject::invokeMethod(rosWorker_, "callStopStream",
+                                Qt::QueuedConnection,
+                                Q_ARG(QString, cells_[i].assignedCamera));
+    }
+  }
+}
+
+void CameraWidget::resumeAllStreams() {
+  for (int i = 0; i < cells_.size(); ++i) {
+    if (!cells_[i].assignedCamera.isEmpty() && cells_[i].player) {
+      // Find the port for the assigned camera to restart
+      int pt = 5000; // default
+      for (const auto &cam : knownCameras_) {
+        if (cam.name == cells_[i].assignedCamera) {
+          pt = cam.port;
+          break;
+        }
+      }
+      cells_[i].player->switchStream(cells_[i].assignedCamera, pt);
+      QMetaObject::invokeMethod(rosWorker_, "callStartStream",
+                                Qt::QueuedConnection,
+                                Q_ARG(QString, cells_[i].assignedCamera));
+    }
   }
 }
 

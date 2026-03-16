@@ -23,6 +23,7 @@ public:
 private slots:
   void onAddCamClicked();
   void onAddJoyNodeClicked();
+  void onAddSettingsClicked();
   void onTabCloseRequested(int index);
 
 private:

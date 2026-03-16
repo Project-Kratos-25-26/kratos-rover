@@ -13,6 +13,9 @@
 #include "ros_worker.h"
 #include "videoplayerwidget.h"
 
+#include <QShortcut>
+#include <QKeySequence>
+
 namespace Ui {
 class CameraWidget;
 }
@@ -32,6 +35,9 @@ class CameraWidget : public QWidget {
 public:
   explicit CameraWidget(RosWorker *rosWorker, QWidget *parent = nullptr);
   ~CameraWidget() override;
+
+  void pauseAllStreams();
+  void resumeAllStreams();
 
 private slots:
   void onCamerasUpdated(CameraStatusList cameras);
@@ -53,6 +59,11 @@ private:
 
   // Sidebar camera buttons
   QVBoxLayout *camerasListLayout_;
+
+  // Hotkeys
+  void setupHotkeys();
+  void toggleCameraByIndex(int index);
+  void toggleAllCameras();
 
   // Grid
   QGridLayout *gridLayout_;
