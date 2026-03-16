@@ -49,15 +49,12 @@ void CameraWidget::onCamerasUpdated(CameraStatusList cameras) {
 
   if (cameras.isEmpty()) {
     // If we receive an empty list from the backend, it means no cameras are
-    // available. We should probably shut them all down except ZED (which
-    // bypasses this). Let's iterate through activePlayers_ and close non-ZED
-    // ones.
+    // available. We should probably shut them all down. Let's iterate through
+    // activePlayers_ and close them.
     QList<QString> toRemove;
     for (auto it = activePlayers_.constBegin(); it != activePlayers_.constEnd();
          ++it) {
-      if (it.key() != "ZED") {
-        toRemove.append(it.key());
-      }
+      toRemove.append(it.key());
     }
     for (const QString &name : toRemove) {
       DraggableWrapper *wrapper = activePlayers_.take(name);
@@ -70,22 +67,18 @@ void CameraWidget::onCamerasUpdated(CameraStatusList cameras) {
       bool isActive = camInfo.active;
       int port = camInfo.port;
 
-      if (name == "ZED") {
-        isActive = activePlayers_.contains("ZED");
-      } else {
-        // Force backend active state sync for generic cameras
-        if (isActive && !activePlayers_.contains(name)) {
-          // It's active on backend, but we don't have it displayed! We should
-          // auto-start it. (Or we just trust our local UI state and wait for
-          // user click). For now, let's keep local state as source of truth for
-          // display
-          isActive = activePlayers_.contains(name);
-        } else if (!isActive && activePlayers_.contains(name)) {
-          // Backend says false, but we have it. Close it.
-          DraggableWrapper *wrapper = activePlayers_.take(name);
-          if (wrapper)
-            wrapper->deleteLater();
-        }
+      // Force backend active state sync for generic cameras
+      if (isActive && !activePlayers_.contains(name)) {
+        // It's active on backend, but we don't have it displayed! We should
+        // auto-start it. (Or we just trust our local UI state and wait for
+        // user click). For now, let's keep local state as source of truth for
+        // display
+        isActive = activePlayers_.contains(name);
+      } else if (!isActive && activePlayers_.contains(name)) {
+        // Backend says false, but we have it. Close it.
+        DraggableWrapper *wrapper = activePlayers_.take(name);
+        if (wrapper)
+          wrapper->deleteLater();
       }
 
       QPushButton *btn = new QPushButton(name, ui->scrollAreaWidgetContents);
@@ -145,26 +138,6 @@ void CameraWidget::onButtonClicked() {
   QString name = btn->property("cameraName").toString();
   bool isActive = btn->property("isActive").toBool();
   int port = btn->property("port").toInt();
-
-  if (name == "ZED") {
-    if (activePlayers_.contains("ZED")) {
-      // It's currently active, shut it down
-      DraggableWrapper *wrapper = activePlayers_.take("ZED");
-      if (wrapper)
-        wrapper->deleteLater();
-    } else {
-      // Spawn new ZED display
-      VideoPlayerWidget *player = new VideoPlayerWidget(name, port, rosWorker_);
-      DraggableWrapper *wrapper =
-          new DraggableWrapper(player, ui->canvasWidget);
-      wrapper->resize(640, 480);
-      wrapper->move(20, 20); // offset a bit
-      wrapper->show();
-      activePlayers_.insert("ZED", wrapper);
-      player->startStream();
-    }
-    return;
-  }
 
   if (isActive) {
     if (activePlayers_.contains(name)) {

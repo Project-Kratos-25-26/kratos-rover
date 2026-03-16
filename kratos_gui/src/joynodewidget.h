@@ -21,8 +21,6 @@ public:
 
   // Example functions to receive /joy data
   void updateJoystickData(QList<float> axes, QList<int> buttons);
-  void updateJoynodeStatus(bool isRunning);
-  void updateHardwareStatus(bool isConnected);
 
 private:
   Ui::JoyNodeWidget *ui;

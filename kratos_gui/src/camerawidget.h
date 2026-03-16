@@ -4,7 +4,6 @@
 #include <QList>
 #include <QMap>
 #include <QString>
-#include <QThread>
 #include <QVBoxLayout>
 #include <QWidget>
 

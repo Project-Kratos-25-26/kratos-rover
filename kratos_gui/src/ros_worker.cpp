@@ -9,8 +9,6 @@ RosWorker::~RosWorker() {
   }
   cameraSub_.reset();
   joySub_.reset();
-  zedSub_.reset();
-  startStreamClient_.reset();
   stopStreamClient_.reset();
   node_.reset();
 }
@@ -95,53 +93,4 @@ void RosWorker::callStopStream(QString cameraName) {
         auto res = f.get();
         emit serviceResult(res->success, QString::fromStdString(res->message));
       });
-}
-
-void RosWorker::subscribeToZed() {
-  zedSubscriptionCount_++;
-  qDebug() << "subscribeToZed() called. Count:" << zedSubscriptionCount_;
-  if (zedSubscriptionCount_ == 1) {
-    qDebug() << "Subscribing to ZED topic /zed/zed_node/rgb/color/rect/image";
-    // Only subscribe the first time someone needs ZED
-    zedSub_ = node_->create_subscription<sensor_msgs::msg::Image>(
-        "/zed/zed_node/rgb/color/rect/image", 10,
-        std::bind(&RosWorker::onZedImageReceived, this, std::placeholders::_1));
-  }
-}
-
-void RosWorker::unsubscribeFromZed() {
-  if (zedSubscriptionCount_ > 0) {
-    zedSubscriptionCount_--;
-    qDebug() << "unsubscribeFromZed() called. Count:" << zedSubscriptionCount_;
-    if (zedSubscriptionCount_ == 0) {
-      qDebug() << "Unsubscribing from ZED topic";
-      // Unsubscribe when no one needs ZED anymore
-      zedSub_.reset();
-    }
-  }
-}
-
-void RosWorker::onZedImageReceived(
-    const sensor_msgs::msg::Image::SharedPtr msg) {
-  QImage::Format format = QImage::Format_Invalid;
-
-  if (msg->encoding == "rgb8") {
-    format = QImage::Format_RGB888;
-  } else if (msg->encoding == "bgr8") {
-    format = QImage::Format_BGR888;
-  } else if (msg->encoding == "rgba8") {
-    format = QImage::Format_RGBA8888;
-  } else if (msg->encoding == "bgra8") {
-    // ROS uses BGRA for ZED default
-    format = QImage::Format_ARGB32; // In Qt, ARGB32 is physically BGRA in
-                                    // memory on little endian
-  } else {
-    // Attempt fallback or emit error. For safety we just ignore unsupported
-    // formats.
-    return;
-  }
-
-  // Create QImage from data. Deep copy is required.
-  QImage frame(msg->data.data(), msg->width, msg->height, msg->step, format);
-  emit zedImageReceived(frame.copy());
 }

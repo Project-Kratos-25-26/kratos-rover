@@ -9,38 +9,32 @@ JoyNodeWidget::JoyNodeWidget(QWidget *parent)
     : QWidget(parent), ui(new Ui::JoyNodeWidget) {
   ui->setupUi(this);
 
-  // Initialize status
-  updateJoynodeStatus(true);
-  updateHardwareStatus(true);
+  // Initialize status to false (waiting for actual data)
+  ui->joynodeStatusLabel->setText("JOYNODE: NOT RUNNING");
+  ui->joynodeStatusLabel->setStyleSheet(
+      "color: #FF5555; font-weight: bold; border: none;");
+  
+  ui->hardwareStatusLabel->setText("HW: DISCONNECTED");
+  ui->hardwareStatusLabel->setStyleSheet(
+      "color: #FF5555; font-weight: bold; border: none;");
 }
 
 JoyNodeWidget::~JoyNodeWidget() { delete ui; }
 
-void JoyNodeWidget::updateJoynodeStatus(bool isRunning) {
-  if (isRunning) {
-    ui->joynodeStatusLabel->setText("JOYNODE: NOMINAL");
-    ui->joynodeStatusLabel->setStyleSheet(
-        "color: #AAAAAA; font-weight: bold; border: none;");
-  } else {
-    ui->joynodeStatusLabel->setText("JOYNODE: NOT RUNNING");
-    ui->joynodeStatusLabel->setStyleSheet(
-        "color: #FF5555; font-weight: bold; border: none;");
-  }
-}
-
-void JoyNodeWidget::updateHardwareStatus(bool isConnected) {
-  if (isConnected) {
-    ui->hardwareStatusLabel->setText("HW: THRUSTMASTER NOMINAL");
-    ui->hardwareStatusLabel->setStyleSheet(
-        "color: #AAAAAA; font-weight: bold; border: none;");
-  } else {
-    ui->hardwareStatusLabel->setText("HW: DISCONNECTED");
-    ui->hardwareStatusLabel->setStyleSheet(
-        "color: #FF5555; font-weight: bold; border: none;");
-  }
-}
 
 void JoyNodeWidget::updateJoystickData(QList<float> axes, QList<int> buttons) {
+  // If we receive data, joynode is running
+  ui->joynodeStatusLabel->setText("JOYNODE: NOMINAL");
+  ui->joynodeStatusLabel->setStyleSheet(
+      "color: #AAAAAA; font-weight: bold; border: none;");
+      
+  // For now, if axes/buttons are not completely empty, assume hardware is connected
+  if (!axes.isEmpty() || !buttons.isEmpty()) {
+    ui->hardwareStatusLabel->setText("HW: CONNECTED"); // Generic name instead of Thrustmaster
+    ui->hardwareStatusLabel->setStyleSheet(
+        "color: #AAAAAA; font-weight: bold; border: none;");
+  }
+
   // Construct raw data string
   QString rawData;
   rawData += "<html><body>[ RAW /joy ]<br>axes: [";
