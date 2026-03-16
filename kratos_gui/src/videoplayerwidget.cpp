@@ -45,6 +45,7 @@ VideoPlayerWidget::~VideoPlayerWidget() {
 
 void VideoPlayerWidget::startStream() {
   videoLabel_->setText(QString("CONNECTING TO %1...").arg(cameraName_));
+  streaming_ = true;
 
   QMetaObject::invokeMethod(
       videoWorker_, "startPipeline", Qt::QueuedConnection,
@@ -52,11 +53,21 @@ void VideoPlayerWidget::startStream() {
 }
 
 void VideoPlayerWidget::stopStream() {
+  streaming_ = false;
   QMetaObject::invokeMethod(videoWorker_, "stopPipeline",
                             Qt::QueuedConnection);
 
-  videoLabel_->setText("VIDEO STOPPED");
+  videoLabel_->setText("NO VIDEO FEED");
   videoLabel_->setPixmap(QPixmap()); // Clear the image
+}
+
+void VideoPlayerWidget::switchStream(const QString &cameraName, int port) {
+  if (streaming_) {
+    stopStream();
+  }
+  cameraName_ = cameraName;
+  port_ = port;
+  startStream();
 }
 
 void VideoPlayerWidget::onNewFrame(QImage frame) {

@@ -20,6 +20,10 @@ public:
   ~VideoPlayerWidget() override;
 
   QString getCameraName() const { return cameraName_; }
+  bool isStreaming() const { return streaming_; }
+
+  /// Switch this player to a different camera stream (stops old, starts new).
+  void switchStream(const QString &cameraName, int port);
 
 public slots:
   void startStream();
@@ -33,6 +37,7 @@ private:
   QString cameraName_;
   int port_;
   RosWorker *rosWorker_;
+  bool streaming_ = false;
 
   VideoWorker *videoWorker_;
   QThread videoThread_;

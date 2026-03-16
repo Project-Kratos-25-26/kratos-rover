@@ -18,6 +18,10 @@ struct CameraInfo {
   QString name;
   bool active;
   int port;
+
+  bool operator==(const CameraInfo &other) const {
+    return name == other.name;
+  }
 };
 
 using CameraStatusList = QList<CameraInfo>;
