@@ -35,6 +35,7 @@ public:
 signals:
   void camerasUpdated(CameraStatusList cameras);
   void serviceResult(bool success, QString message);
+  void serverStatusChanged(bool online);
   void joystickDataUpdated(QList<float> axes, QList<int> buttons);
 
 public slots:
@@ -49,6 +50,8 @@ private:
 
   rclcpp::Node::SharedPtr node_;
   QTimer *spinTimer_ = nullptr;
+  QTimer *serverAliveTimer_ = nullptr;
+  bool isServerOnline_ = false;
 
   rclcpp::Subscription<kratos_msgs::msg::CameraStreamList>::SharedPtr
       cameraSub_;

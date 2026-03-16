@@ -46,6 +46,7 @@ private slots:
   void onCellStreamChanged(int cellIndex);
   void onSidebarToggle();
   void onSidebarCameraClicked();
+  void onServerStatusChanged(bool online);
 
 private:
   Ui::CameraWidget *ui;
@@ -53,6 +54,8 @@ private:
   RosWorker *rosWorker_;
 
   // Toolbar widgets
+  QLabel *serverErrorLabel_ = nullptr;
+  QPushButton *initServerBtn_ = nullptr;
   QPushButton *sidebarSplitToggle_;
   QComboBox *layoutCombo_;
   QComboBox *sizeCombo_;

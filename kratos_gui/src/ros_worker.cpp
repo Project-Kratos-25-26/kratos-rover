@@ -38,6 +38,19 @@ void RosWorker::init() {
     }
   });
   spinTimer_->start(10); // 10ms ~ 100Hz
+
+  // Server timeout detection
+  serverAliveTimer_ = new QTimer(this);
+  serverAliveTimer_->setSingleShot(true);
+  connect(serverAliveTimer_, &QTimer::timeout, this, [this]() {
+    if (isServerOnline_) {
+      isServerOnline_ = false;
+      emit serverStatusChanged(false);
+      // Optional: Clear UI when server dies
+      emit camerasUpdated(CameraStatusList());
+    }
+  });
+  serverAliveTimer_->start(3000); // Expect a message every <3 seconds
 }
 
 void RosWorker::onCameraListReceived(
@@ -49,6 +62,13 @@ void RosWorker::onCameraListReceived(
     info.active = cam.active;
     info.port = cam.port;
     cameras.append(info);
+  }
+
+  // Auto-restart timer since we received a list
+  serverAliveTimer_->start(3000);
+  if (!isServerOnline_) {
+    isServerOnline_ = true;
+    emit serverStatusChanged(true);
   }
 
   // Emit the new list of camera statuses

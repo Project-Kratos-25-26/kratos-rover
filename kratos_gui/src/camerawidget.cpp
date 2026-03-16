@@ -3,7 +3,10 @@
 
 #include <QDebug>
 #include <QLabel>
+#include <QMenu>
 #include <QScrollArea>
+#include <QToolButton>
+#include <QProcess>
 
 // ─── Layout options ────────────────────────────────────────────────
 // Each entry: "label" → {rows, cols}
@@ -145,6 +148,35 @@ CameraWidget::CameraWidget(RosWorker *rosWorker, QWidget *parent)
   // ── Setup Sidebar ────────────────────────────────────────────────
   camerasListLayout_ =
       qobject_cast<QVBoxLayout *>(ui->sidebarScrollContents->layout());
+
+  // Initialize Server UI
+  initServerBtn_ = new QPushButton("Initialize Cam Server", ui->sidebarScrollContents);
+  initServerBtn_->setStyleSheet(R"(
+      QPushButton { background-color: #55FF55; color: #000000; font-weight: bold; padding: 10px; border: none; border-radius: 4px; }
+      QPushButton:hover { background-color: #77FF77; }
+  )");
+  connect(initServerBtn_, &QPushButton::clicked, this, [this]() {
+    if (initServerBtn_->text() == "Cam Server Online") return; // Already online
+    
+    initServerBtn_->setText("Initializing...");
+    initServerBtn_->setStyleSheet(R"(
+        QPushButton { background-color: #FFFF55; color: #000000; font-weight: bold; padding: 10px; border: none; border-radius: 4px; }
+    )");
+    qDebug() << "Executing SSH to initialize kratos_cameras server...";
+
+    // Run detached process to start remote ros2 launch
+    QStringList args;
+    args << "-c" << "sshpass -p 'kratos123' ssh kratos@192.168.1.10 'source ~/ros2_ws/install/setup.bash && ros2 launch kratos_cameras kratos_cameras.launch.py'";
+    QProcess::startDetached("bash", args);
+  });
+  
+  serverErrorLabel_ = new QLabel("Server is not initialized on the network", ui->sidebarScrollContents);
+  serverErrorLabel_->setStyleSheet("color: #FF5555; font-size: 11px; font-weight: bold; margin-bottom: 5px;");
+  serverErrorLabel_->setWordWrap(true);
+
+  // Insert above the first spacer or item
+  camerasListLayout_->insertWidget(0, initServerBtn_);
+  camerasListLayout_->insertWidget(1, serverErrorLabel_);
   
   // Set default splitter sizes (e.g. 250px sidebar, remainder to grid)
   ui->mainSplitter->setSizes(QList<int>() << 250 << 800);
@@ -162,6 +194,8 @@ CameraWidget::CameraWidget(RosWorker *rosWorker, QWidget *parent)
   // ── ROS connection ───────────────────────────────────────────────
   connect(rosWorker_, &RosWorker::camerasUpdated, this,
           &CameraWidget::onCamerasUpdated);
+  connect(rosWorker_, &RosWorker::serverStatusChanged, this,
+          &CameraWidget::onServerStatusChanged);
 
   // Build initial grid (2×2)
   rebuildGrid(2, 2);
@@ -339,7 +373,13 @@ void CameraWidget::onCamerasUpdated(CameraStatusList cameras) {
 
   // Populate sidebar buttons
   for (const auto &camInfo : knownCameras_) {
-    QPushButton *btn = new QPushButton(camInfo.name, ui->sidebarScrollContents);
+    QWidget *rowWidget = new QWidget(ui->sidebarScrollContents);
+    QHBoxLayout *rowLayout = new QHBoxLayout(rowWidget);
+    rowLayout->setContentsMargins(0, 0, 0, 0);
+    rowLayout->setSpacing(2);
+
+    QPushButton *btn = new QPushButton(camInfo.name, rowWidget);
+    btn->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     btn->setProperty("cameraName", camInfo.name);
     btn->setProperty("isActive", camInfo.active);
     btn->setProperty("port", camInfo.port);
@@ -369,13 +409,52 @@ void CameraWidget::onCamerasUpdated(CameraStatusList cameras) {
     }
 
     connect(btn, &QPushButton::clicked, this, &CameraWidget::onSidebarCameraClicked);
+    rowLayout->addWidget(btn);
+
+    // Dummy settings dropdown
+    QToolButton *settingsBtn = new QToolButton(rowWidget);
+    settingsBtn->setText("⚙");
+    settingsBtn->setStyleSheet(R"(
+        QToolButton {
+            color: #AAAAAA; background-color: #1C1C1C;
+            border: 1px solid #333333; border-radius: 0px;
+            padding: 8px 4px; font-size: 14px;
+        }
+        QToolButton:hover { background-color: #333333; color: #FFFFFF; }
+        QToolButton::menu-indicator { image: none; }
+    )");
+    settingsBtn->setPopupMode(QToolButton::InstantPopup);
+    QMenu *settingsMenu = new QMenu(settingsBtn);
+    settingsMenu->addAction("Configure... (TODO)");
+    settingsBtn->setMenu(settingsMenu);
+    
+    rowLayout->addWidget(settingsBtn);
+
     // Insert before spacer
-    camerasListLayout_->insertWidget(camerasListLayout_->count() - 1, btn);
+    camerasListLayout_->insertWidget(camerasListLayout_->count() - 1, rowWidget);
   }
 
   // Auto-allocate whenever active cameras change
   if (activeChanged) {
     autoAssignCameras();
+  }
+}
+
+void CameraWidget::onServerStatusChanged(bool online) {
+  if (online) {
+    initServerBtn_->setText("Cam Server Online");
+    initServerBtn_->setStyleSheet(R"(
+        QPushButton { background-color: #FFFF55; color: #000000; font-weight: bold; padding: 10px; border: none; border-radius: 4px; }
+        QPushButton:hover { background-color: #FFFF77; }
+    )");
+    serverErrorLabel_->hide();
+  } else {
+    initServerBtn_->setText("Initialize Cam Server");
+    initServerBtn_->setStyleSheet(R"(
+        QPushButton { background-color: #55FF55; color: #000000; font-weight: bold; padding: 10px; border: none; border-radius: 4px; }
+        QPushButton:hover { background-color: #77FF77; }
+    )");
+    serverErrorLabel_->show();
   }
 }
 

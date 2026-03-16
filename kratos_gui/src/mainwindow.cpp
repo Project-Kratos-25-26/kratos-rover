@@ -4,6 +4,7 @@
 #include <QDebug>
 #include <QMenu>
 #include <QPixmap>
+#include <QProcess>
 #include <QPushButton>
 #include <QStyle>
 #include <QTabBar>
@@ -60,10 +61,11 @@ public:
     listWidget = new QListWidget(this);
     listWidget->addItem("Add Cam View (C)");
     listWidget->addItem("Add Joynode Panel (J)");
+    listWidget->addItem("Add Settings Panel (S)");
     listWidget->setCurrentRow(0); // Select first by default
     layout->addWidget(listWidget);
 
-    setFixedSize(250, 100);
+    setFixedSize(250, 130);
   }
 
   int getSelectedIndex() const { return listWidget->currentRow(); }
@@ -79,6 +81,9 @@ protected:
       accept();
     } else if (event->key() == Qt::Key_J) {
       listWidget->setCurrentRow(1);
+      accept();
+    } else if (event->key() == Qt::Key_S) {
+      listWidget->setCurrentRow(2);
       accept();
     } else {
       QDialog::keyPressEvent(event);
@@ -217,6 +222,8 @@ MainWindow::MainWindow(QWidget *parent)
               &MainWindow::onAddCamClicked);
       connect(addMenu.addAction("Add Joynode Panel"), &QAction::triggered, this,
               &MainWindow::onAddJoyNodeClicked);
+      connect(addMenu.addAction("Add Settings Panel"), &QAction::triggered, this,
+              &MainWindow::onAddSettingsClicked);
       addMenu.exec(QCursor::pos());
     }
   });
@@ -284,6 +291,8 @@ MainWindow::MainWindow(QWidget *parent)
         onAddCamClicked();
       } else if (dialog.getSelectedIndex() == 1) {
         onAddJoyNodeClicked();
+      } else if (dialog.getSelectedIndex() == 2) {
+        onAddSettingsClicked();
       }
     }
   });
@@ -368,6 +377,12 @@ MainWindow::MainWindow(QWidget *parent)
 }
 
 MainWindow::~MainWindow() {
+  // Ensure the remote Server process is closed so it doesn't run indefinitely.
+  qDebug() << "Executing SSH to kill kratos_cameras server...";
+  QStringList args;
+  args << "-c" << "sshpass -p 'kratos123' ssh kratos@192.168.1.10 'pkill -f \"ros2 launch kratos_cameras kratos_cameras.launch.py\" || true'";
+  QProcess::startDetached("bash", args);
+
   rosThread_.quit();
   rosThread_.wait();
 
@@ -466,6 +481,60 @@ void MainWindow::onAddJoyNodeClicked() {
     tabBar->setTabButton(index, QTabBar::RightSide, closeBtn);
     connect(closeBtn, &QPushButton::clicked, this, [this, jw]() {
       int idx = ui->tabWidget->indexOf(jw);
+      if (idx != -1)
+        onTabCloseRequested(idx);
+    });
+  }
+
+  ui->tabWidget->setCurrentIndex(index);
+}
+
+void MainWindow::onAddSettingsClicked() {
+  ui->stackedWidget->setCurrentIndex(1); // Switch to tabs view
+  int targetIndex = ui->tabWidget->count() - 1;
+  if (targetIndex < 0)
+    targetIndex = 0;
+
+  int nextNum = 1;
+  while (true) {
+    bool numUsed = false;
+    QString nameToCheck = QString("SETTINGS %1").arg(nextNum);
+    for (int i = 0; i < ui->tabWidget->count(); ++i) {
+      if (ui->tabWidget->tabText(i) == nameToCheck) {
+        numUsed = true;
+        break;
+      }
+    }
+    if (!numUsed)
+      break;
+    nextNum++;
+  }
+
+  QWidget *settingsTab = new QWidget(this);
+  settingsTab->setStyleSheet("background-color: #0A0A0A;");
+
+  QVBoxLayout *layout = new QVBoxLayout(settingsTab);
+  
+  QLabel *todoLabel = new QLabel("⚙️ TODO: Settings Panel", settingsTab);
+  todoLabel->setStyleSheet("color: #666666; font-size: 24px; font-weight: bold;");
+  todoLabel->setAlignment(Qt::AlignCenter);
+
+  layout->addWidget(todoLabel);
+  
+  int index = ui->tabWidget->insertTab(targetIndex, settingsTab,
+                                       QString("SETTINGS %1").arg(nextNum));
+
+  QTabBar *tabBar = ui->tabWidget->findChild<QTabBar *>();
+  if (tabBar) {
+    QPushButton *closeBtn = new QPushButton("✕", ui->tabWidget);
+    closeBtn->setFixedSize(16, 16);
+    closeBtn->setStyleSheet(
+        "QPushButton { color: #AAAAAA; border: none; background: transparent; "
+        "font-size: 12px; font-weight: bold; } QPushButton:hover { color: "
+        "#FFFF55; }");
+    tabBar->setTabButton(index, QTabBar::RightSide, closeBtn);
+    connect(closeBtn, &QPushButton::clicked, this, [this, settingsTab]() {
+      int idx = ui->tabWidget->indexOf(settingsTab);
       if (idx != -1)
         onTabCloseRequested(idx);
     });
