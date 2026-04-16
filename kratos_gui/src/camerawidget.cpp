@@ -150,33 +150,7 @@ CameraWidget::CameraWidget(RosWorker *rosWorker, QWidget *parent)
       qobject_cast<QVBoxLayout *>(ui->sidebarScrollContents->layout());
 
   // Initialize Server UI
-  initServerBtn_ = new QPushButton("Initialize Cam Server", ui->sidebarScrollContents);
-  initServerBtn_->setStyleSheet(R"(
-      QPushButton { background-color: #55FF55; color: #000000; font-weight: bold; padding: 10px; border: none; border-radius: 4px; }
-      QPushButton:hover { background-color: #77FF77; }
-  )");
-  connect(initServerBtn_, &QPushButton::clicked, this, [this]() {
-    if (initServerBtn_->text() == "Cam Server Online") return; // Already online
-    
-    initServerBtn_->setText("Initializing...");
-    initServerBtn_->setStyleSheet(R"(
-        QPushButton { background-color: #FFFF55; color: #000000; font-weight: bold; padding: 10px; border: none; border-radius: 4px; }
-    )");
-    qDebug() << "Executing SSH to initialize kratos_cameras server...";
-
-    // Run detached process to start remote ros2 launch
-    QStringList args;
-    args << "-c" << "sshpass -p 'kratos123' ssh kratos@192.168.1.10 'source ~/ros2_ws/install/setup.bash && ros2 launch kratos_cameras kratos_cameras.launch.py'";
-    QProcess::startDetached("bash", args);
-  });
-  
-  serverErrorLabel_ = new QLabel("Server is not initialized on the network", ui->sidebarScrollContents);
-  serverErrorLabel_->setStyleSheet("color: #FF5555; font-size: 11px; font-weight: bold; margin-bottom: 5px;");
-  serverErrorLabel_->setWordWrap(true);
-
-  // Insert above the first spacer or item
-  camerasListLayout_->insertWidget(0, initServerBtn_);
-  camerasListLayout_->insertWidget(1, serverErrorLabel_);
+  // Removed initialization logic
   
   // Set default splitter sizes (e.g. 250px sidebar, remainder to grid)
   ui->mainSplitter->setSizes(QList<int>() << 250 << 800);
@@ -194,8 +168,7 @@ CameraWidget::CameraWidget(RosWorker *rosWorker, QWidget *parent)
   // ── ROS connection ───────────────────────────────────────────────
   connect(rosWorker_, &RosWorker::camerasUpdated, this,
           &CameraWidget::onCamerasUpdated);
-  connect(rosWorker_, &RosWorker::serverStatusChanged, this,
-          &CameraWidget::onServerStatusChanged);
+
 
   // Build initial grid (2×2)
   rebuildGrid(2, 2);
@@ -228,34 +201,35 @@ void CameraWidget::parseLayout(int index, int &rows, int &cols) {
 // ─── Rebuild the grid ──────────────────────────────────────────────
 
 void CameraWidget::rebuildGrid(int rows, int cols) {
-  // Stop streams and clean up existing cells
-  for (auto &cell : cells_) {
-    if (cell.player && !cell.assignedCamera.isEmpty()) {
-      cell.player->stopStream();
-    }
-    // Deleting the frame deletes all children (player, picker) too
-    if (cell.frame) {
-      gridLayout_->removeWidget(cell.frame);
-      delete cell.frame;
+  int newTotal = rows * cols;
+  int oldTotal = cells_.size();
+
+  // 1. Detach existing cells from layout without destroying them
+  for (int i = 0; i < oldTotal; ++i) {
+    if (cells_[i].frame) {
+      gridLayout_->removeWidget(cells_[i].frame);
     }
   }
-  cells_.clear();
 
-  // Reset all existing stretch factors to 0
-  for (int r = 0; r < gridLayout_->rowCount(); ++r)
-    gridLayout_->setRowStretch(r, 0);
-  for (int c = 0; c < gridLayout_->columnCount(); ++c)
-    gridLayout_->setColumnStretch(c, 0);
-
-  // Also reset row/column minimum sizes by removing any leftover spacers
-  // Recreate the layout entirely for a clean slate
+  // 2. Recreate layout for a clean slate
   delete gridLayout_;
   gridLayout_ = new QGridLayout(gridContainer_);
   gridLayout_->setSpacing(4);
   gridLayout_->setContentsMargins(4, 4, 4, 4);
 
-  int totalCells = rows * cols;
-  cells_.resize(totalCells);
+  // 3. Remove surplus cells if layout shrunk
+  if (newTotal < oldTotal) {
+    for (int i = oldTotal - 1; i >= newTotal; --i) {
+      if (cells_[i].player && !cells_[i].assignedCamera.isEmpty()) {
+        cells_[i].player->stopStream();
+      }
+      if (cells_[i].frame) {
+        cells_[i].frame->hide();
+        cells_[i].frame->deleteLater();
+      }
+    }
+    cells_.resize(newTotal);
+  }
 
   // Size settings
   int sizeIdx = sizeCombo_->currentIndex();
@@ -263,60 +237,92 @@ void CameraWidget::rebuildGrid(int rows, int cols) {
   int cellW = autoFit ? 0 : kSizes[sizeIdx].width;
   int cellH = autoFit ? 0 : kSizes[sizeIdx].height;
 
-  for (int i = 0; i < totalCells; ++i) {
+  // 4. Create new cells if layout expanded
+  if (newTotal > oldTotal) {
+    cells_.resize(newTotal);
+    for (int i = oldTotal; i < newTotal; ++i) {
+      QWidget *cellFrame = new QWidget(gridContainer_);
+      cellFrame->setStyleSheet(
+          "QWidget { background-color: #121212; border: 1px solid #2A2A2A; }");
+
+      QVBoxLayout *cellLayout = new QVBoxLayout(cellFrame);
+      cellLayout->setContentsMargins(0, 0, 0, 0);
+      cellLayout->setSpacing(0);
+
+      QComboBox *picker = new QComboBox(cellFrame);
+      picker->setStyleSheet(kCellComboStyle);
+      picker->addItem("— None —");
+      for (const auto &cam : knownCameras_) {
+        picker->addItem(cam.name);
+      }
+      picker->setProperty("cellIndex", i);
+      connect(picker, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
+              [this, i](int) { onCellStreamChanged(i); });
+      cellLayout->addWidget(picker);
+
+      VideoPlayerWidget *player =
+          new VideoPlayerWidget("", 0, rosWorker_, cellFrame);
+      cellLayout->addWidget(player, 1);
+
+      cells_[i].frame = cellFrame;
+      cells_[i].player = player;
+      cells_[i].streamPicker = picker;
+      cells_[i].assignedCamera = "";
+    }
+  }
+
+  // 5. Place all cells in the layout and apply stretches
+  for (int i = 0; i < newTotal; ++i) {
     int r = i / cols;
     int c = i % cols;
 
-    // Create a container for the cell (player + overlay combo)
-    QWidget *cellFrame = new QWidget(gridContainer_);
-    cellFrame->setStyleSheet(
-        "QWidget { background-color: #121212; border: 1px solid #2A2A2A; }");
-
-    QVBoxLayout *cellLayout = new QVBoxLayout(cellFrame);
-    cellLayout->setContentsMargins(0, 0, 0, 0);
-    cellLayout->setSpacing(0);
-
-    // Stream picker combo at the top of each cell
-    QComboBox *picker = new QComboBox(cellFrame);
-    picker->setStyleSheet(kCellComboStyle);
-    picker->addItem("— None —");
-    // Populate with known cameras
-    for (const auto &cam : knownCameras_) {
-      picker->addItem(cam.name);
-    }
-    picker->setProperty("cellIndex", i);
-    connect(picker, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
-            [this, i](int) { onCellStreamChanged(i); });
-    cellLayout->addWidget(picker);
-
-    // Video player
-    VideoPlayerWidget *player =
-        new VideoPlayerWidget("", 0, rosWorker_, cellFrame);
-    cellLayout->addWidget(player, 1); // stretch factor 1
-
     if (!autoFit) {
-      cellFrame->setFixedSize(cellW, cellH);
+      cells_[i].frame->setMinimumSize(0, 0); // Reset minimum
+      cells_[i].frame->setMaximumSize(QWIDGETSIZE_MAX, QWIDGETSIZE_MAX);
+      cells_[i].frame->setFixedSize(cellW, cellH);
     } else {
-      cellFrame->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-      cellFrame->setMinimumSize(200, 150);
+      cells_[i].frame->setMaximumSize(QWIDGETSIZE_MAX, QWIDGETSIZE_MAX);
+      cells_[i].frame->setMinimumSize(200, 150);
+      cells_[i].frame->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     }
 
-    gridLayout_->addWidget(cellFrame, r, c);
+    gridLayout_->addWidget(cells_[i].frame, r, c);
+    cells_[i].frame->show();
 
-    // Set equal stretch for auto-fit
     if (autoFit) {
       gridLayout_->setRowStretch(r, 1);
       gridLayout_->setColumnStretch(c, 1);
     }
-
-    cells_[i].frame = cellFrame;
-    cells_[i].player = player;
-    cells_[i].streamPicker = picker;
-    cells_[i].assignedCamera = "";
   }
 
-  // Auto-allocate active cameras to new cells
-  autoAssignCameras();
+  // 6. After placing cells, auto-assign any active, currently unassigned cameras
+  for (const auto &cam : knownCameras_) {
+    if (cam.active) {
+      bool isAssigned = false;
+      // Check if it's already in one of the surviving/new cells
+      for (const auto &cell : cells_) {
+        if (cell.assignedCamera == cam.name || 
+            (cell.streamPicker && cell.streamPicker->currentText() == cam.name)) {
+          isAssigned = true;
+          break;
+        }
+      }
+
+      // If active but homeless, find a home for it
+      if (!isAssigned) {
+        for (auto &cell : cells_) {
+          if (cell.assignedCamera.isEmpty() && 
+             (cell.streamPicker && cell.streamPicker->currentIndex() <= 0)) { // 0 is "— None —"
+            int idx = cell.streamPicker->findText(cam.name);
+            if (idx >= 0) {
+              cell.streamPicker->setCurrentIndex(idx);
+              break; // Found a home
+            }
+          }
+        }
+      }
+    }
+  }
 }
 
 // ─── Layout changed ────────────────────────────────────────────────
@@ -339,28 +345,54 @@ void CameraWidget::onSizeChanged(int /*index*/) {
 // ─── Camera list from ROS ──────────────────────────────────────────
 
 void CameraWidget::onCamerasUpdated(CameraStatusList cameras) {
-  // Check if active cameras changed to trigger auto-assignment
-  bool activeChanged = false;
-  int oldActiveCount = 0;
-  int newActiveCount = 0;
-  for (const auto& c : knownCameras_) if (c.active) oldActiveCount++;
-  for (const auto& c : cameras) if (c.active) newActiveCount++;
-  
-  if (oldActiveCount != newActiveCount) {
-    activeChanged = true;
-  } else {
-    // Counts match, but did the identities change?
-    for (int i=0; i<cameras.size(); ++i) {
-      int oldIdx = knownCameras_.indexOf(cameras[i]);
-      if (oldIdx >= 0 && knownCameras_[oldIdx].active != cameras[i].active) {
-        activeChanged = true;
-        break;
+  QList<CameraInfo> newlyActive;
+
+  for (const auto &cam : cameras) {
+    if (cam.active) {
+      // Check if it was newly turned active
+      bool wasActive = false;
+      for (const auto &oldCam : knownCameras_) {
+        if (oldCam.name == cam.name && oldCam.active) {
+          wasActive = true;
+          break;
+        }
+      }
+      if (!wasActive) newlyActive.append(cam);
+    } else {
+      // If camera became inactive, unassign it from any cells
+      for (int i = 0; i < cells_.size(); ++i) {
+        if (cells_[i].assignedCamera == cam.name) {
+          cells_[i].streamPicker->setCurrentIndex(0); // "None"
+        }
       }
     }
   }
 
   knownCameras_ = cameras;
   updateCellDropdowns();
+
+  // Auto-assign newly active cameras to first available empty cells
+  for (const auto &cam : newlyActive) {
+    bool alreadyAssigned = false;
+    for (int i = 0; i < cells_.size(); ++i) {
+      if (cells_[i].assignedCamera == cam.name) {
+        alreadyAssigned = true;
+        break;
+      }
+    }
+
+    if (!alreadyAssigned) {
+      for (int i = 0; i < cells_.size(); ++i) {
+        if (cells_[i].assignedCamera.isEmpty()) {
+          int idx = cells_[i].streamPicker->findText(cam.name);
+          if (idx >= 0) {
+            cells_[i].streamPicker->setCurrentIndex(idx);
+            break; 
+          }
+        }
+      }
+    }
+  }
   
   // Clear existing sidebar buttons
   QLayoutItem *child;
@@ -434,29 +466,9 @@ void CameraWidget::onCamerasUpdated(CameraStatusList cameras) {
     camerasListLayout_->insertWidget(camerasListLayout_->count() - 1, rowWidget);
   }
 
-  // Auto-allocate whenever active cameras change
-  if (activeChanged) {
-    autoAssignCameras();
-  }
 }
 
-void CameraWidget::onServerStatusChanged(bool online) {
-  if (online) {
-    initServerBtn_->setText("Cam Server Online");
-    initServerBtn_->setStyleSheet(R"(
-        QPushButton { background-color: #FFFF55; color: #000000; font-weight: bold; padding: 10px; border: none; border-radius: 4px; }
-        QPushButton:hover { background-color: #FFFF77; }
-    )");
-    serverErrorLabel_->hide();
-  } else {
-    initServerBtn_->setText("Initialize Cam Server");
-    initServerBtn_->setStyleSheet(R"(
-        QPushButton { background-color: #55FF55; color: #000000; font-weight: bold; padding: 10px; border: none; border-radius: 4px; }
-        QPushButton:hover { background-color: #77FF77; }
-    )");
-    serverErrorLabel_->show();
-  }
-}
+
 
 // ─── Sidebar actions ───────────────────────────────────────────────
 
@@ -577,35 +589,7 @@ void CameraWidget::toggleAllCameras() {
   }
 }
 
-void CameraWidget::pauseAllStreams() {
-  for (int i = 0; i < cells_.size(); ++i) {
-    if (!cells_[i].assignedCamera.isEmpty() && cells_[i].player) {
-      cells_[i].player->stopStream();
-      QMetaObject::invokeMethod(rosWorker_, "callStopStream",
-                                Qt::QueuedConnection,
-                                Q_ARG(QString, cells_[i].assignedCamera));
-    }
-  }
-}
 
-void CameraWidget::resumeAllStreams() {
-  for (int i = 0; i < cells_.size(); ++i) {
-    if (!cells_[i].assignedCamera.isEmpty() && cells_[i].player) {
-      // Find the port for the assigned camera to restart
-      int pt = 5000; // default
-      for (const auto &cam : knownCameras_) {
-        if (cam.name == cells_[i].assignedCamera) {
-          pt = cam.port;
-          break;
-        }
-      }
-      cells_[i].player->switchStream(cells_[i].assignedCamera, pt);
-      QMetaObject::invokeMethod(rosWorker_, "callStartStream",
-                                Qt::QueuedConnection,
-                                Q_ARG(QString, cells_[i].assignedCamera));
-    }
-  }
-}
 
 // ─── Update all cell dropdowns with current camera list ────────────
 
@@ -671,16 +655,4 @@ void CameraWidget::onCellStreamChanged(int cellIndex) {
   cell.player->switchStream(cam.name, cam.port);
 }
 
-void CameraWidget::autoAssignCameras() {
-  int nextCellIdx = 0;
-  for (const auto &cam : knownCameras_) {
-    if (cam.active && nextCellIdx < cells_.size()) {
-      QComboBox *picker = cells_[nextCellIdx].streamPicker;
-      if (picker) {
-        int camIdx = knownCameras_.indexOf(cam) + 1;
-        picker->setCurrentIndex(camIdx); // Triggers onCellStreamChanged to start stream in UI
-      }
-      nextCellIdx++;
-    }
-  }
-}
+

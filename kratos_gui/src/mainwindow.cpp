@@ -19,6 +19,7 @@
 #include <QListWidget>
 #include <QVBoxLayout>
 #include <QKeyEvent>
+#include <QTimer>
 
 static bool _registered = []() {
   qRegisterMetaType<CameraStatusList>("CameraStatusList");
@@ -189,31 +190,6 @@ MainWindow::MainWindow(QWidget *parent)
     }
   });
 
-  // Handle auto-toggling of camera streams when tabs change
-  connect(ui->tabWidget, &QTabWidget::currentChanged, this, [this](int index) {
-    static int previousIndex = -1;
-
-    // Pause streams in previous tab if it was a CameraWidget
-    if (previousIndex >= 0 && previousIndex < ui->tabWidget->count()) {
-      QWidget *prevWidget = ui->tabWidget->widget(previousIndex);
-      CameraWidget *prevCamWidget = qobject_cast<CameraWidget *>(prevWidget);
-      if (prevCamWidget) {
-        prevCamWidget->pauseAllStreams();
-      }
-    }
-
-    // Resume streams in new tab if it is a CameraWidget
-    if (index >= 0 && index < ui->tabWidget->count()) {
-      QWidget *currentWidget = ui->tabWidget->widget(index);
-      CameraWidget *currentCamWidget = qobject_cast<CameraWidget *>(currentWidget);
-      if (currentCamWidget) {
-        currentCamWidget->resumeAllStreams();
-      }
-    }
-
-    previousIndex = index;
-  });
-
   connect(ui->tabWidget, &QTabWidget::tabBarClicked, this, [this](int index) {
     if (index == ui->tabWidget->count() - 1) {
       QMenu addMenu(this);
@@ -377,11 +353,6 @@ MainWindow::MainWindow(QWidget *parent)
 }
 
 MainWindow::~MainWindow() {
-  // Ensure the remote Server process is closed so it doesn't run indefinitely.
-  qDebug() << "Executing SSH to kill kratos_cameras server...";
-  QStringList args;
-  args << "-c" << "sshpass -p 'kratos123' ssh kratos@192.168.1.10 'pkill -f \"ros2 launch kratos_cameras kratos_cameras.launch.py\" || true'";
-  QProcess::startDetached("bash", args);
 
   rosThread_.quit();
   rosThread_.wait();
@@ -435,7 +406,7 @@ void MainWindow::onAddCamClicked() {
     connect(closeBtn, &QPushButton::clicked, this, [this, cw]() {
       int idx = ui->tabWidget->indexOf(cw);
       if (idx != -1)
-        onTabCloseRequested(idx);
+        QTimer::singleShot(0, this, [this, idx]() { onTabCloseRequested(idx); });
     });
   }
 
@@ -482,7 +453,7 @@ void MainWindow::onAddJoyNodeClicked() {
     connect(closeBtn, &QPushButton::clicked, this, [this, jw]() {
       int idx = ui->tabWidget->indexOf(jw);
       if (idx != -1)
-        onTabCloseRequested(idx);
+        QTimer::singleShot(0, this, [this, idx]() { onTabCloseRequested(idx); });
     });
   }
 
@@ -536,7 +507,7 @@ void MainWindow::onAddSettingsClicked() {
     connect(closeBtn, &QPushButton::clicked, this, [this, settingsTab]() {
       int idx = ui->tabWidget->indexOf(settingsTab);
       if (idx != -1)
-        onTabCloseRequested(idx);
+        QTimer::singleShot(0, this, [this, idx]() { onTabCloseRequested(idx); });
     });
   }
 

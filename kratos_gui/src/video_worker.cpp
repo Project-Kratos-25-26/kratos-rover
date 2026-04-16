@@ -3,11 +3,7 @@
 #include <QDebug>
 #include <gst/video/video.h>
 
-// Define MAX_RETRIES (assuming it's not defined in the header)
-// This should ideally be in the header or a config file.
-#ifndef MAX_RETRIES
-#define MAX_RETRIES 5
-#endif
+
 
 VideoWorker::VideoWorker(QObject *parent) : QObject(parent) {
   // Ensure GStreamer is initialized (safe to call multiple times)

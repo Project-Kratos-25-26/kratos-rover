@@ -1,0 +1,2 @@
+Invoking command in '/home/zerobx0/ros2_ws/src/kratos-rover/kratos_gui/build/kratos_gui': /usr/bin/cmake /home/zerobx0/ros2_ws/src/kratos-rover/kratos_gui -DCMAKE_INSTALL_PREFIX=/home/zerobx0/ros2_ws/src/kratos-rover/kratos_gui/install/kratos_gui
+Invoked command in '/home/zerobx0/ros2_ws/src/kratos-rover/kratos_gui/build/kratos_gui' returned '1': /usr/bin/cmake /home/zerobx0/ros2_ws/src/kratos-rover/kratos_gui -DCMAKE_INSTALL_PREFIX=/home/zerobx0/ros2_ws/src/kratos-rover/kratos_gui/install/kratos_gui

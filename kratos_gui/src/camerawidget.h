@@ -36,8 +36,7 @@ public:
   explicit CameraWidget(RosWorker *rosWorker, QWidget *parent = nullptr);
   ~CameraWidget() override;
 
-  void pauseAllStreams();
-  void resumeAllStreams();
+
 
 private slots:
   void onCamerasUpdated(CameraStatusList cameras);
@@ -46,7 +45,7 @@ private slots:
   void onCellStreamChanged(int cellIndex);
   void onSidebarToggle();
   void onSidebarCameraClicked();
-  void onServerStatusChanged(bool online);
+
 
 private:
   Ui::CameraWidget *ui;
@@ -54,8 +53,7 @@ private:
   RosWorker *rosWorker_;
 
   // Toolbar widgets
-  QLabel *serverErrorLabel_ = nullptr;
-  QPushButton *initServerBtn_ = nullptr;
+
   QPushButton *sidebarSplitToggle_;
   QComboBox *layoutCombo_;
   QComboBox *sizeCombo_;
@@ -79,7 +77,7 @@ private:
   void rebuildGrid(int rows, int cols);
   void updateCellDropdowns();
   void parseLayout(int index, int &rows, int &cols);
-  void autoAssignCameras();
+
 };
 
 #endif // CAMERAWIDGET_H

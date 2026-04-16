@@ -244,12 +244,20 @@ std::vector<std::string> GstStreamManager::poll_and_cleanup_ended_streams() {
 std::string GstStreamManager::build_pipeline_description(
     const GstCameraPipelineConfig &config) const {
   std::ostringstream ss;
-  ss << "v4l2src device=" << config.camera_device << " ! "
-     << "image/jpeg,width=" << config.width << ",height=" << config.height
-     << ",framerate=" << config.fps << "/1 ! "
-     << "nvv4l2decoder mjpeg=1 ! "
-     << "nvvidconv ! "
-     << "video/x-raw(memory:NVMM),format=NV12 ! ";
+  ss << "v4l2src device=" << config.camera_device << " ! ";
+  
+  if (config.format == "MJPG") {
+      ss << "image/jpeg,width=" << config.width << ",height=" << config.height
+         << ",framerate=" << config.fps << "/1 ! "
+         << "nvv4l2decoder mjpeg=1 ! "
+         << "nvvidconv ! "
+         << "video/x-raw(memory:NVMM),format=NV12 ! ";
+  } else {
+      ss << "video/x-raw,format=" << config.format << ",width=" << config.width << ",height=" << config.height
+         << ",framerate=" << config.fps << "/1 ! "
+         << "nvvidconv ! "
+         << "video/x-raw(memory:NVMM),format=NV12 ! ";
+  }
 
   if (config.encoder == "h265") {
     ss << "nvv4l2h265enc "

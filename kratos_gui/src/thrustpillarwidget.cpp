@@ -19,7 +19,7 @@ void ThrustPillarWidget::paintEvent(QPaintEvent *event) {
   QRect rect = this->rect();
   int w = rect.width();
   int h = rect.height();
-  int midY = h / 2;
+  // int midY = h / 2;
 
   // Background track
   painter.fillRect(rect, QColor(28, 28, 28)); // Dark grey track (#1C1C1C)
